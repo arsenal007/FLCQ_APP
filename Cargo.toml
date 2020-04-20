@@ -1,0 +1,11 @@
+[package]
+name = "flcq_serial"
+version = "0.1.0"
+authors = ["arsenal007 <fc_arsenal@ukr.net>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+version = "3.*.*"
+serialport = { git = "https://gitlab.com/susurrus/serialport-rs" }
+clap = "*"
