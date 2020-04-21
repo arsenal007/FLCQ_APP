@@ -7,6 +7,25 @@ use std::time::Duration;
 use clap::{App, AppSettings, Arg};
 use serialport::prelude::*;
 
+struct Flcq {
+    port: Box<dyn serialport::SerialPort>,
+}
+
+impl Flcq {
+    fn init<T: std::string>(&self, port_name: &T) -> () {
+        let mut settings: SerialPortSettings = Default::default();
+        settings.timeout = Duration::from_millis(10);
+        settings.baud_rate = 57600u32;
+        match serialport::open_with_settings(&port_name, &settings) {
+            Ok(mut result) => self.port = result,
+            Err(e) => {
+                eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
+                ::std::process::exit(1);
+            }
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("Serialport Example - Receive Data")
         .about("Reads data from a serial port and echoes it to stdout")

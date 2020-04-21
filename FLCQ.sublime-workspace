@@ -11,7 +11,7 @@
 			"file": ".gitignore",
 			"settings":
 			{
-				"buffer_size": 8,
+				"buffer_size": 320,
 				"line_ending": "Unix"
 			}
 		},
@@ -198,7 +198,7 @@
 			]
 		]
 	],
-	"build_varint": "Run (with args)...",
+	"build_varint": "",
 	"command_palette":
 	{
 		"height": 0.0,
@@ -305,7 +305,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8,
+						"buffer_size": 320,
 						"regions":
 						{
 						},
@@ -346,7 +346,9 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/Rust Enhanced/RustEnhanced.sublime-syntax"
+							"syntax": "Packages/Rust Enhanced/RustEnhanced.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 364.0,
