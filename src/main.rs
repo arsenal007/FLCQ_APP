@@ -1,7 +1,7 @@
 extern crate clap;
 extern crate serialport;
 
-use std::io::{self, Write};
+//use std::io::{self, Write};
 use std::time::Duration;
 
 use clap::{App, AppSettings, Arg};
@@ -47,7 +47,6 @@ impl Flcq {
                         ()
                     }
                     Err(e) => eprintln!("{:?}", e),
-                    Ok(_) => (),
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
