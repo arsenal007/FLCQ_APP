@@ -12,17 +12,47 @@ struct Flcq {
 }
 
 impl Flcq {
-    fn init<T: std::string>(&self, port_name: &T) -> () {
+    fn new<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(port_name: &T) -> Self {
         let mut settings: SerialPortSettings = Default::default();
-        settings.timeout = Duration::from_millis(10);
+        settings.timeout = Duration::from_millis(1000);
         settings.baud_rate = 57600u32;
         match serialport::open_with_settings(&port_name, &settings) {
-            Ok(mut result) => self.port = result,
+            Ok(result) => Flcq { port: result },
             Err(e) => {
                 eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
                 ::std::process::exit(1);
             }
         }
+    }
+}
+
+impl Flcq {
+    fn eeprom_write_byte(&mut self, adrress: &u8, data: &u8) -> () {
+        let write_data = vec![0x03u8, *adrress, *data, 0xFFu8, 0xFFu8];
+
+        match self.port.write(&write_data) {
+            Ok(_) => {
+                let mut read_data = vec![0; 5];
+                match self.port.read(&mut read_data) {
+                    Ok(_n) => {
+                        if read_data[2] == *data && read_data[1] == *adrress && _n == 5 {
+                            ()
+                        }
+                    }
+                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                        match self.port.name() {
+                            Some(name) => println!("Timeout port \"{}\"", name),
+                            None => (),
+                        }
+                        ()
+                    }
+                    Err(e) => eprintln!("{:?}", e),
+                    Ok(_) => (),
+                }
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
+            Err(e) => panic!("Error while writing data to the port: {}", e),
+        };
     }
 }
 
@@ -36,45 +66,7 @@ fn main() {
                 .use_delimiter(false)
                 .required(true),
         )
-        .arg(
-            Arg::with_name("baud")
-                .help("The baud rate to connect at")
-                .use_delimiter(false)
-                .required(true),
-        )
         .get_matches();
-    let port_name = matches.value_of("port").unwrap();
-    let baud_rate = matches.value_of("baud").unwrap();
-
-    let mut settings: SerialPortSettings = Default::default();
-    settings.timeout = Duration::from_millis(10);
-    if let Ok(rate) = baud_rate.parse::<u32>() {
-        settings.baud_rate = rate.into();
-    } else {
-        eprintln!("Error: Invalid baud rate '{}' specified", baud_rate);
-        ::std::process::exit(1);
-    }
-
-    match serialport::open_with_settings(&port_name, &settings) {
-        Ok(mut port) => {
-            let read_eeprom_buf: [u8; 4] = [0x05u8, 0x00u8, 0xFFu8, 0xFFu8];
-            match port.write(&read_eeprom_buf) {
-                Ok(_) => {
-                    let mut eeprom_value: Vec<u8> = vec![0; 8];
-                    println!("Receiving data on {} at {} baud:", &port_name, &baud_rate);
-                    match port.read(eeprom_value.as_mut_slice()) {
-                        Ok(_t) => println!("value 0x{:x}", &eeprom_value[2]),
-                        Err(ref e) if e.kind() == io::ErrorKind::TimedOut => (),
-                        Err(e) => eprintln!("{:?}", e),
-                    }
-                }
-                Err(ref e) if e.kind() == io::ErrorKind::TimedOut => (),
-                Err(e) => panic!("Error while writing data to the port: {}", e),
-            };
-        }
-        Err(e) => {
-            eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
-            ::std::process::exit(1);
-        }
-    }
+    let mut _flcq = Flcq::new(matches.value_of("port").unwrap());
+    _flcq.eeprom_write_byte(&0x01u8, &0xAAu8);
 }
