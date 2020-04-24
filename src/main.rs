@@ -55,6 +55,32 @@ impl Flcq {
     }
 }
 
+impl Flcq {
+    fn eeprom_read_byte(&mut self, adrress: &u8) -> Result<u8, std::io::Error> {
+        let write_data = vec![0x03u8, *adrress, 0xFFu8, 0xFFu8];
+
+        self.port.write(&write_data)?;
+        let mut read_data = vec![0; 5];
+        match self.port.read(&mut read_data) {
+            Ok(_n) => {
+                if read_data[1] == *adrress && _n == 5 {
+                    Ok(read_data[2])
+                } else {
+                    Err(std::io::ErrorKind::TimedOut)
+                }
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => match self.port.name() {
+                Some(name) => println!("Timeout port \"{}\"", name),
+                None => Err(e),
+            },
+            Err(e) => {
+                eprintln!("{:?}", e);
+                Err(e)
+            }
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("Serialport Example - Receive Data")
         .about("Reads data from a serial port and echoes it to stdout")
