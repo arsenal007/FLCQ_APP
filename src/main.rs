@@ -35,13 +35,17 @@ impl Flcq {
                 let mut read_data = vec![0; 5];
                 match self.port.read(&mut read_data) {
                     Ok(_n) => {
-                        if read_data[2] == *data && read_data[1] == *adrress && _n == 5 {
+                        if read_data[0] == 0x04
+                            && read_data[1] == *adrress
+                            && read_data[2] == *data
+                            && _n == 5
+                        {
                             ()
                         }
                     }
                     Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
                         match self.port.name() {
-                            Some(name) => println!("Timeout port \"{}\"", name),
+                            Some(name) => println!("Write: timeout port \"{}\"", name),
                             None => (),
                         }
                         ()
@@ -57,26 +61,70 @@ impl Flcq {
 
 impl Flcq {
     fn eeprom_read_byte(&mut self, adrress: &u8) -> Result<u8, std::io::Error> {
-        let write_data = vec![0x03u8, *adrress, 0xFFu8, 0xFFu8];
+        let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];
 
         self.port.write(&write_data)?;
         let mut read_data = vec![0; 5];
         match self.port.read(&mut read_data) {
             Ok(_n) => {
-                if read_data[1] == *adrress && _n == 5 {
+                if read_data[0] == 0x04 && read_data[1] == *adrress && _n == 5 {
                     Ok(read_data[2])
                 } else {
-                    Err(std::io::ErrorKind::TimedOut)
+                    let error = std::io::Error::new(
+                        std::io::ErrorKind::AddrNotAvailable,
+                        "return address is different as in read command",
+                    );
+                    Err(error)
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => match self.port.name() {
-                Some(name) => println!("Timeout port \"{}\"", name),
-                None => Err(e),
+                Some(name) => {
+                    println!("Read: Timeout port \"{}\"", name);
+                    let error = std::io::Error::new(std::io::ErrorKind::TimedOut, "timeout");
+                    Err(error)
+                }
+                None => {
+                    let error = std::io::Error::new(
+                        std::io::ErrorKind::AddrNotAvailable,
+                        "port name is not avilable",
+                    );
+                    Err(error)
+                }
             },
             Err(e) => {
                 eprintln!("{:?}", e);
                 Err(e)
             }
+        }
+    }
+}
+
+impl Flcq {
+    fn eeprom_write_f64(&mut self, _adrress: &u8, _value: &f64) -> () {
+        unsafe {
+            let b = _value.clone();
+            let _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);
+            for (i, item) in _byte_array.iter().enumerate() {
+                let adrress = *_adrress + i as u8;
+                self.eeprom_write_byte(&adrress, &item);
+            }
+        }
+    }
+}
+
+impl Flcq {
+    fn eeprom_read_f64(&mut self, _adrress: &u8) -> f64 {
+        unsafe {
+            let mut _byte_array = [0u8; 8];
+
+            for i in 0..=7 {
+                let adrress = *_adrress + i as u8;
+                match self.eeprom_read_byte(&adrress) {
+                    Ok(value) => _byte_array[i] = value,
+                    Err(_) => {}
+                };
+            }
+            std::mem::transmute::<[u8; 8], f64>(_byte_array)
         }
     }
 }
@@ -93,5 +141,7 @@ fn main() {
         )
         .get_matches();
     let mut _flcq = Flcq::new(matches.value_of("port").unwrap());
-    _flcq.eeprom_write_byte(&0x01u8, &0xAAu8);
+
+    _flcq.eeprom_write_f64(&0u8, &200.0f64);
+    println!("{:?}", _flcq.eeprom_read_f64(&0u8));
 }
