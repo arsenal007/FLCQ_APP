@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"_",
+				"_byte_array"
+			],
+			[
+				"ee",
+				"eeprom_write_byte"
+			],
+			[
 				"wri",
 				"write_data"
 			]
@@ -24,7 +32,7 @@
 			"file": "src/main.rs",
 			"settings":
 			{
-				"buffer_size": 2412,
+				"buffer_size": 4943,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -333,15 +341,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2412,
+						"buffer_size": 4943,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1688,
-								1688
+								4880,
+								4880
 							]
 						],
 						"settings":
@@ -351,7 +359,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 457.0,
+						"translation.y": 1573.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -421,7 +429,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 256.0
+		"height": 281.0
 	},
 	"output.find_results":
 	{

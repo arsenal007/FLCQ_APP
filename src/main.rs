@@ -129,6 +129,37 @@ impl Flcq {
     }
 }
 
+impl Flcq {
+    fn temperature(&self, _first: u8, _second: u8) -> f64 {
+        let data = [_second, _first];
+        unsafe {
+            let raw = std::mem::transmute::<[u8; 2], u16>(data);
+            let f = raw as f64;
+            f * 0.0625
+        }
+    }
+}
+
+impl Flcq {
+    fn get_temperature(&mut self) -> f64 {
+        let write_data = vec![0x09u8, 0x08u8, 0x00u8, 0xFFu8, 0xFFu8];
+        self.port.write(&write_data);
+        let mut read_data = vec![0; 5];
+        let mut res: f64 = -100.0;
+        match self.port.read(&mut read_data) {
+            Ok(_n) => {
+                if read_data[0] == 0x0A && _n == 5 {
+                    res = self.temperature(read_data[1], read_data[2])
+                } else {
+                    ()
+                }
+                res
+            }
+            Err(_) => res,
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("Serialport Example - Receive Data")
         .about("Reads data from a serial port and echoes it to stdout")
@@ -142,6 +173,7 @@ fn main() {
         .get_matches();
     let mut _flcq = Flcq::new(matches.value_of("port").unwrap());
 
-    _flcq.eeprom_write_f64(&0u8, &200.0f64);
+    _flcq.eeprom_write_f64(&0u8, &128.0f64);
     println!("{:?}", _flcq.eeprom_read_f64(&0u8));
+    println!("temp {:?}C", _flcq.get_temperature());
 }
