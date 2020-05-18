@@ -4,6 +4,42 @@
 		"selected_items":
 		[
 			[
+				"overf",
+				"overflows_array"
+			],
+			[
+				"N",
+				"n_overflow"
+			],
+			[
+				"read",
+				"read_data"
+			],
+			[
+				"a",
+				"adrress"
+			],
+			[
+				"over",
+				"overflows"
+			],
+			[
+				"freq",
+				"frequency"
+			],
+			[
+				"fre",
+				"frequencies"
+			],
+			[
+				"fe",
+				"frequency"
+			],
+			[
+				"ge",
+				"get_temperature"
+			],
+			[
 				"_",
 				"_byte_array"
 			],
@@ -32,7 +68,7 @@
 			"file": "src/main.rs",
 			"settings":
 			{
-				"buffer_size": 4943,
+				"buffer_size": 10740,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -286,6 +322,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"1048576f64",
+			"{}\n",
 			"        \n"
 		],
 		"highlight": true,
@@ -341,15 +379,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4943,
+						"buffer_size": 10740,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4880,
-								4880
+								10317,
+								10317
 							]
 						],
 						"settings":
@@ -359,7 +397,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1573.0,
+						"translation.y": 5046.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -429,7 +467,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 281.0
+		"height": 328.0
 	},
 	"output.find_results":
 	{
