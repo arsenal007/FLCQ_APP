@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"rig",
+				"right_text"
+			],
+			[
+				"middl",
+				"middle_text"
+			],
+			[
+				"middle",
+				"middle_col"
+			],
+			[
+				"to",
+				"to_string"
+			],
+			[
+				"ti",
+				"to_string"
+			],
+			[
 				"overf",
 				"overflows_array"
 			],
@@ -59,7 +79,7 @@
 			"file": "Cargo.toml",
 			"settings":
 			{
-				"buffer_size": 305,
+				"buffer_size": 520,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -68,7 +88,16 @@
 			"file": "src/main.rs",
 			"settings":
 			{
-				"buffer_size": 10740,
+				"buffer_size": 6313,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/com.rs",
+			"settings":
+			{
+				"buffer_size": 9709,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -288,13 +317,17 @@
 	"expanded_folders":
 	[
 		"/C/Users/Vasyl/FLCQ_APP",
-		"/C/Users/Vasyl/FLCQ_APP/src"
+		"/C/Users/Vasyl/FLCQ_APP/target",
+		"/C/Users/Vasyl/FLCQ_APP/target/debug",
+		"/C/Users/Vasyl/FLCQ_APP/target/debug/build",
+		"/C/Users/Vasyl/FLCQ_APP/target/debug/build/winapi-b629414768450ace",
+		"/C/Users/Vasyl/FLCQ_APP/target/debug/examples"
 	],
 	"file_history":
 	[
+		"/C/Users/Vasyl/FLCQ_APP/src/main.rs",
 		"/C/Users/Vasyl/FLCQ_APP/src/tmpa9cwk6",
 		"/C/Users/Vasyl/FLCQ_APP/.gitignore",
-		"/C/Users/Vasyl/FLCQ_APP/src/main.rs",
 		"/C/Users/Vasyl/FLCQ_APP/FLCQ.sublime-project",
 		"/C/Users/Vasyl/FLCQ_APP/Cargo.toml",
 		"/C/Users/Vasyl/FLCQ/uart.asm",
@@ -322,6 +355,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"}\n",
 			"1048576f64",
 			"{}\n",
 			"        \n"
@@ -351,15 +385,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 305,
+						"buffer_size": 520,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								303,
-								303
+								400,
+								400
 							]
 						],
 						"settings":
@@ -370,7 +404,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -379,15 +413,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10740,
+						"buffer_size": 6313,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								10317,
-								10317
+								1168,
+								1168
 							]
 						],
 						"settings":
@@ -397,7 +431,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 5046.0,
+						"translation.y": 433.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -405,6 +439,36 @@
 				},
 				{
 					"buffer": 2,
+					"file": "src/com.rs",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9709,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6127,
+								6127
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Rust Enhanced/RustEnhanced.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2769.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
 					"file": "FLCQ.sublime-project",
 					"semi_transient": false,
 					"settings":
@@ -428,7 +492,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -467,7 +531,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 328.0
+		"height": 311.0
 	},
 	"output.find_results":
 	{

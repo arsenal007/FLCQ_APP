@@ -1,269 +1,33 @@
 extern crate clap;
+extern crate dirs;
 extern crate serialport;
 
 //use std::io::{self, Write};
-use std::time::Duration;
+
+#[macro_use]
+extern crate conrod;
+extern crate find_folder;
+use conrod::backend::glium::glium::{self, Surface};
+use conrod::{widget, Colorable, Positionable, Widget};
 
 use clap::{App, AppSettings, Arg};
-use serialport::prelude::*;
+mod com;
 
-struct Flcq {
-    port: Box<dyn serialport::SerialPort>,
-}
-
-impl Flcq {
-    fn new<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(port_name: &T) -> Self {
-        let mut settings: SerialPortSettings = Default::default();
-        settings.timeout = Duration::from_millis(100000);
-        settings.baud_rate = 57600u32;
-        match serialport::open_with_settings(&port_name, &settings) {
-            Ok(result) => Flcq { port: result },
-            Err(e) => {
-                eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
-                ::std::process::exit(1);
-            }
-        }
-    }
-}
-
-impl Flcq {
-    fn timeout<T: std::fmt::Display>(&self, s: &T) -> () {
-        match self.port.name() {
-            Some(name) => println!("{}: Timeout port \"{}\"", s, name),
-            None => println!("\"{}\" port name is not avilable", s),
-        }
-    }
-}
-
-impl Flcq {
-    fn eeprom_write_byte(&mut self, address: &u8, data: &u8) -> () {
-        let write_data = vec![0x03u8, *data, *address, 0xFFu8, 0xFFu8];
-
-        match self.port.write(&write_data) {
-            Ok(_) => {
-                let mut read_data = vec![0; 5];
-                match self.port.read(&mut read_data) {
-                    Ok(_n) => {
-                        if read_data[0] == 0x04
-                            && read_data[1] == *data
-                            && read_data[2] == *address
-                            && _n == 5
-                        {
-                            ()
-                        }
-                    }
-                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                        self.timeout(&std::string::String::from(" [eeprom write byte] "))
-                    }
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
-            Err(e) => panic!("Error while writing data to the port: {}", e),
-        };
-    }
-}
-
-impl Flcq {
-    fn eeprom_read_byte(&mut self, adrress: &u8) -> u8 {
-        let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];
-
-        match self.port.write(&write_data) {
-            Ok(_) => (),
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                self.timeout(&std::string::String::from(" [ query for write eeprom ] "))
-            }
-            Err(e) => eprintln!("{:?}", e),
-        }
-        let mut read_data = vec![0; 5];
-        match self.port.read(&mut read_data) {
-            Ok(_n) => {
-                println!("{} {} {}", read_data[0], read_data[1], read_data[2]);
-                if read_data[0] == 0x04 && read_data[2] == *adrress && _n == 5 {
-                    read_data[1]
-                } else {
-                    eprintln!("return address is different as in read command");
-                    0xFFu8
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                self.timeout(&std::string::String::from(" [ eeprom read byte ] "));
-                0xFFu8
-            }
-            Err(e) => {
-                eprintln!("{:?}", e);
-                0xFFu8
-            }
-        }
-    }
-}
-
-impl Flcq {
-    fn eeprom_write_f64(&mut self, _adrress: &u8, _value: &f64) -> () {
-        unsafe {
-            let b = _value.clone();
-            let _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);
-            for (i, item) in _byte_array.iter().enumerate() {
-                let adrress = *_adrress + i as u8;
-                //println!("{} {}", i, item);
-                //thread::sleep(std::time::Duration::from_millis(1000));
-                self.eeprom_write_byte(&adrress, &item);
-            }
-        }
-    }
-}
-
-impl Flcq {
-    fn eeprom_read_f64(&mut self, _adrress: &u8) -> f64 {
-        unsafe {
-            let mut _byte_array = [0u8; 8];
-
-            for i in 0..=7 {
-                let adrress = *_adrress + i as u8;
-                _byte_array[i] = self.eeprom_read_byte(&adrress);
-            }
-            std::mem::transmute::<[u8; 8], f64>(_byte_array)
-        }
-    }
-}
-
-impl Flcq {
-    fn temperature(&self, _first: u8, _second: u8) -> f64 {
-        let data = [_second, _first];
-        unsafe {
-            let raw = std::mem::transmute::<[u8; 2], u16>(data);
-            let f = raw as f64;
-            f * 0.0625
-        }
-    }
-}
-
-impl Flcq {
-    fn get_temperature(&mut self) -> f64 {
-        let write_data = vec![0x09u8, 0x08u8, 0x00u8, 0xFFu8, 0xFFu8];
-        let mut res: f64 = -100.0;
-        match self.port.write(&write_data) {
-            Ok(_) => (),
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                &std::string::String::from(" [ query for temperature from FLCQ ] "),
-            ),
-            Err(e) => eprintln!("{:?}", e),
-        };
-        let mut read_data = vec![0; 5];
-        match self.port.read(&mut read_data) {
-            Ok(_n) => {
-                if read_data[0] == 0x0A && _n == 5 {
-                    res = self.temperature(read_data[1], read_data[2])
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                &std::string::String::from(" [ wait for temperature from FLCQ ] "),
-            ),
-            Err(e) => eprintln!("{:?}", e),
-        }
-        res
-    }
-}
-impl Flcq {
-    fn frequency(&self, prescaler: u8, tmr0: u8, overflows_array: [u8; 4]) -> f64 {
-        let overflows: u32;
-        unsafe {
-            overflows = std::mem::transmute::<[u8; 4], u32>(overflows_array);
-        }
-        let prescaler_values = [1.0f64, 2.0f64, 4.0f64, 8.0f64, 16.0f64];
-        println!(
-            "{} {} {}",
-            overflows,
-            prescaler_values[(prescaler + 1u8) as usize],
-            tmr0 as f64
-        );
-        prescaler_values[(prescaler + 1u8) as usize] * (256.0f64 * overflows as f64 + tmr0 as f64)
-    }
-}
-
-impl Flcq {
-    fn get_frequency_c(&mut self, n: u8) -> f64 {
-        let mut freq: f64 = -10000.0f64;
-        if (0 < n) && (n < 255) {
-            let write_data = vec![0x0Bu8, 0x10u8, 0x00u8, n, 0xFFu8, 0xFFu8];
-            match self.port.write(&write_data) {
-                Ok(_) => (),
-                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                    &std::string::String::from(" [ query for frequency from FLCQ ] "),
-                ),
-                Err(e) => eprintln!("{:?}", e),
-            };
-
-            let mut read_data = vec![0; 9];
-
-            match self.port.read(&mut read_data) {
-                Ok(_n) => {
-                    let n_overflow_tmp = [read_data[3], read_data[4], read_data[5], read_data[6]];
-                    let overflows: u32;
-                    unsafe {
-                        overflows = std::mem::transmute::<[u8; 4], u32>(n_overflow_tmp);
-                    }
-                    println!("overflows {}", overflows);
-                    if read_data[0] == 0x06 && _n == 9 {
-                        let n_overflow = [read_data[3], read_data[4], read_data[5], read_data[6]];
-                        freq = self.frequency(read_data[1], read_data[2], n_overflow);
-                    }
-                }
-                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                    &std::string::String::from(" [ wait for temperature from FLCQ ] "),
-                ),
-                Err(e) => eprintln!("{:?}", e),
-            }
-        } else {
-            println!("wrong averging over {:?}, must be (0 < n < 255) ", n);
-        }
-        freq
-    }
-}
-
-impl Flcq {
-    fn get_frequency(&mut self, mut n: u8) -> f64 {
-        if (0 < n) && (n < 255) {
-            let write_data = vec![0x07u8, 0x10u8, 0x00u8, n, 0xFFu8, 0xFFu8];
-            match self.port.write(&write_data) {
-                Ok(_) => (),
-                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                    &std::string::String::from(" [ query for frequency from FLCQ ] "),
-                ),
-                Err(e) => eprintln!("{:?}", e),
-            };
-
-            let mut frequencies = Vec::new();
-            loop {
-                let mut read_data = vec![0; 9];
-                match self.port.read(&mut read_data) {
-                    Ok(_n) => {
-                        if read_data[0] == 0x06 && _n == 9 {
-                            let n_overflow =
-                                [read_data[3], read_data[4], read_data[5], read_data[6]];
-                            frequencies.push(self.frequency(
-                                read_data[1],
-                                read_data[2],
-                                n_overflow,
-                            ));
-                        }
-                    }
-                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(
-                        &std::string::String::from(" [ wait for temperature from FLCQ ] "),
-                    ),
-                    Err(e) => eprintln!("{:?}", e),
-                }
-                n = n - 1;
-                if n == 0 {
-                    break;
-                }
-            }
-            let sum = frequencies.iter().sum::<f64>() as f64;
-            sum / frequencies.len() as f64
-        } else {
-            println!("wrong averging over {:?}, must be (0 < n < 255) ", n);
-            -1000.0f64
-        }
+conrod::widget_ids! {
+    struct Ids {
+        master,
+        left_col,
+        middle_col,
+        right_col,
+        left_text,
+        middle_text,
+        right_text,
+        text,
+        refresh,
+        tab_frequency,
+        tab_frequency_calibration,
+        tabs,
+        settings,top,
     }
 }
 
@@ -278,7 +42,7 @@ fn main() {
                 .required(true),
         )
         .get_matches();
-    let mut _flcq = Flcq::new(matches.value_of("port").unwrap());
+    let mut flcq = com::open(matches.value_of("port").unwrap());
 
     //_flcq.eeprom_write_f64(&0u8, &128.0f64);
     //println!("{:?}", _flcq.eeprom_read_f64(&0u8));
@@ -286,15 +50,145 @@ fn main() {
     //_flcq.eeprom_write_f64(&8u8, &t);
     //let period = _flcq.get_frequency_c(254u8) / 3000000.0f64;
     //let period = _flcq.eeprom_read_f64(&16u8);
-    let period = _flcq.eeprom_read_f64(&40u8);
+
+    //let period = flcq.eeprom_read_f64(&40u8);
+    //let f = flcq.get_frequency_c(254u8) / period;
 
     //_flcq.eeprom_write_f64(&40u8, &period);
-    let t = _flcq.eeprom_read_f64(&8u8);
-    println!(
-        "measurments period {:?}sec, calibration temperature {}, current temperature {}",
-        period,
-        t,
-        _flcq.get_temperature()
-    );
-    println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
+    //let t = _flcq.eeprom_read_f64(&8u8);
+    //println!(        "measurments period {:?}sec, calibration temperature {}, current temperature {}",        period,        t,        _flcq.get_temperature()    );
+    //println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
+    const WIDTH: u32 = 400;
+    const HEIGHT: u32 = 200;
+
+    let mut events_loop = glium::glutin::EventsLoop::new();
+    let window = glium::glutin::WindowBuilder::new().with_title("FLCQ");
+
+    let context = glium::glutin::ContextBuilder::new()
+        .with_vsync(true)
+        .with_multisampling(4);
+    let display = glium::Display::new(window, context, &events_loop).unwrap();
+    let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
+    let home_dir = dirs::home_dir().unwrap();
+    //let font_folder = find_folder::Search::KidsThenParents(100, 100)        .for_folder("Noto-hinted")        .unwrap();
+    let rdir = home_dir.to_str().unwrap();
+    ui.fonts
+        .insert_from_file("C:\\Users\\Vasyl\\Downloads\\Noto-hinted\\NotoSans-Regular.ttf")
+        .unwrap();
+
+    let ids = Ids::new(ui.widget_id_generator());
+    let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();
+    let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
+
+    'render: loop {
+        // Handle all events.
+        let mut events = Vec::new();
+        events_loop.poll_events(|event| events.push(event));
+        if events.is_empty() {
+            events_loop.run_forever(|event| {
+                events.push(event);
+                glium::glutin::ControlFlow::Break
+            });
+        }
+        for event in events.drain(..) {
+            match event.clone() {
+                glium::glutin::Event::WindowEvent { event, .. } => match event {
+                    glium::glutin::WindowEvent::CloseRequested
+                    | glium::glutin::WindowEvent::KeyboardInput {
+                        input:
+                            glium::glutin::KeyboardInput {
+                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),
+                                ..
+                            },
+                        ..
+                    } => break 'render,
+                    _ => (),
+                },
+                _ => (),
+            }
+
+            // Use the `winit` backend feature to convert the winit event to a conrod input.
+            let input = match conrod::backend::winit::convert_event(event, &display) {
+                None => continue,
+                Some(input) => input,
+            };
+
+            // Handle the input with the `Ui`.
+            ui.handle_event(input);
+
+            let ui = &mut ui.set_widgets();
+
+            //let s = period.to_string() + "Sec";
+
+            // Our `Canvas` tree, upon which we will place our text widgets.
+
+            widget::Canvas::new()
+                .flow_right(&[
+                    (
+                        ids.top,
+                        widget::Canvas::new()
+                            .color(conrod::color::WHITE)
+                            .pad_bottom(20.0),
+                    ),
+                    (
+                        ids.settings,
+                        widget::Canvas::new().color(conrod::color::WHITE),
+                    ),
+                ])
+                .set(ids.master, ui);
+
+            widget::Tabs::new(&[
+                (ids.tab_frequency, "frequency"),
+                (ids.tab_frequency_calibration, "frequency calibration"),
+            ])
+            //.wh_of(ids.master)
+            .color(conrod::color::WHITE)
+            .label_color(conrod::color::BLACK)
+            .middle_of(ids.top)
+            .set(ids.tabs, ui);
+
+            const PAD: conrod::Scalar = 20.0;
+            /*
+            let frequency = f.to_string() + "Hz";
+            widget::Text::new(&frequency)
+                //.padded_w_of(ids.left_col, PAD)
+                .mid_top_with_margin_on(ids.left_col, PAD)
+                .color(conrod::color::BLACK)
+                .font_size(22)
+                .left_justify()
+                .line_spacing(10.0)
+                .set(ids.left_text, ui);
+
+            widget::Text::new(&s)
+                .mid_top_with_margin_on(ids.middle_col, PAD)
+                .color(conrod::color::BLACK)
+                .font_size(22)
+                .set(ids.middle_text, ui);
+
+            let temperature = flcq.t().to_string() + "C";
+            conrod::widget::Text::new(&temperature)
+                .mid_top_with_margin_on(ids.right_col, PAD)
+                .color(conrod::color::BLACK)
+                .font_size(22)
+                .set(ids.right_text, ui);
+
+            for _click in conrod::widget::Button::new()
+                .middle_of(ids.left_col)
+                .set(ids.refresh, ui)
+            {
+                ();
+            }*/
+        }
+
+        // Render the `Ui` and then display it on the screen.
+        if let Some(primitives) = ui.draw_if_changed() {
+            renderer.fill(&display, primitives, &image_map);
+            let mut target = display.draw();
+            target.clear_color(1.0, 1.0, 1.0, 1.0);
+            renderer.draw(&display, &mut target, &image_map).unwrap();
+            target.finish().unwrap();
+        }
+    }
 }
+
+fn set_ui(ref mut ui: conrod::UiCell, ids: &Ids) {}
