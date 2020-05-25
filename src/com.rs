@@ -267,6 +267,11 @@ impl Flcq {
     }
 }
 
+pub fn ports() -> std::result::Result<std::vec::Vec<serialport::SerialPortInfo>, serialport::Error>
+{
+    serialport::available_ports()
+}
+
 pub fn open<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(v: &T) -> Flcq {
     Flcq::new(v)
 }

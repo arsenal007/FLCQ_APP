@@ -6,17 +6,15 @@ extern crate serialport;
 
 #[macro_use]
 extern crate conrod;
-extern crate find_folder;
-use conrod::backend::glium::glium::{self, Surface};
-use conrod::{widget, Colorable, Positionable, Widget};
 
 use clap::{App, AppSettings, Arg};
+use conrod::backend::glium::glium::{self, Surface};
+use conrod::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget};
 mod com;
 
 conrod::widget_ids! {
     struct Ids {
         master,
-        left_col,
         middle_col,
         right_col,
         left_text,
@@ -26,13 +24,21 @@ conrod::widget_ids! {
         refresh,
         tab_frequency,
         tab_frequency_calibration,
+        tab_capacity,
+        label_frequency,
+        label_frequency_calibration,
+        label_capacity,
         tabs,
-        settings,top,
+        ports,
+        settings,
+        top,
+        led1,
+        label_port,
     }
 }
 
 fn main() {
-    let matches = App::new("Serialport Example - Receive Data")
+    /*let matches = App::new("Serialport Example - Receive Data")
         .about("Reads data from a serial port and echoes it to stdout")
         .setting(AppSettings::DisableVersion)
         .arg(
@@ -42,7 +48,7 @@ fn main() {
                 .required(true),
         )
         .get_matches();
-    let mut flcq = com::open(matches.value_of("port").unwrap());
+    let mut flcq = com::open(matches.value_of("port").unwrap());*/
 
     //_flcq.eeprom_write_f64(&0u8, &128.0f64);
     //println!("{:?}", _flcq.eeprom_read_f64(&0u8));
@@ -58,7 +64,7 @@ fn main() {
     //let t = _flcq.eeprom_read_f64(&8u8);
     //println!(        "measurments period {:?}sec, calibration temperature {}, current temperature {}",        period,        t,        _flcq.get_temperature()    );
     //println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
-    const WIDTH: u32 = 400;
+    const WIDTH: u32 = 800;
     const HEIGHT: u32 = 200;
 
     let mut events_loop = glium::glutin::EventsLoop::new();
@@ -80,9 +86,18 @@ fn main() {
     let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();
     let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
+    let list = com::ports().unwrap();
+
+    let mut a = Vec::new();
+
+    for x in list {
+        a.push(x.port_name.clone());
+    }
+
     'render: loop {
         // Handle all events.
         let mut events = Vec::new();
+
         events_loop.poll_events(|event| events.push(event));
         if events.is_empty() {
             events_loop.run_forever(|event| {
@@ -90,6 +105,7 @@ fn main() {
                 glium::glutin::ControlFlow::Break
             });
         }
+
         for event in events.drain(..) {
             match event.clone() {
                 glium::glutin::Event::WindowEvent { event, .. } => match event {
@@ -121,14 +137,13 @@ fn main() {
             //let s = period.to_string() + "Sec";
 
             // Our `Canvas` tree, upon which we will place our text widgets.
-
             widget::Canvas::new()
-                .flow_right(&[
+                .flow_down(&[
                     (
                         ids.top,
                         widget::Canvas::new()
                             .color(conrod::color::WHITE)
-                            .pad_bottom(20.0),
+                            .length(700.0),
                     ),
                     (
                         ids.settings,
@@ -137,17 +152,102 @@ fn main() {
                 ])
                 .set(ids.master, ui);
 
-            widget::Tabs::new(&[
+            conrod::widget::Tabs::new(&[
                 (ids.tab_frequency, "frequency"),
                 (ids.tab_frequency_calibration, "frequency calibration"),
+                (ids.tab_capacity, "capacity measurments"),
             ])
             //.wh_of(ids.master)
+            .parent(ids.top)
+            .middle()
+            .layout_horizontally()
             .color(conrod::color::WHITE)
             .label_color(conrod::color::BLACK)
-            .middle_of(ids.top)
+            .starting_canvas(ids.tab_frequency)
+            .label_font_size(40)
             .set(ids.tabs, ui);
 
-            const PAD: conrod::Scalar = 20.0;
+            const MARGIN: conrod::Scalar = 0.0;
+
+            widget::Text::new("UART PORT: ")
+                //.padded_w_of(ids.left_col, PAD)
+                .mid_left_with_margin_on(ids.settings, MARGIN)
+                .color(conrod::color::BLACK)
+                .font_size(40)
+                .line_spacing(0.0)
+                .set(ids.label_port, ui);
+
+            const WIDTH_PORT: conrod::Scalar = 20.0;
+
+            widget::DropDownList::new(&a, Some(1usize))
+                .max_visible_items(1usize)
+                .h_of(ids.settings)
+                .w(300.0)
+                .scrollbar_width(WIDTH_PORT)
+                .scrollbar_on_top()
+                .color(color::WHITE)
+                .label_font_size(40)
+                .top_left_with_margins_on(ids.settings, 0.0, 300.0)
+                .set(ids.ports, ui);
+
+            /*
+                        const WIDTH_PORTS: conrod::Scalar = 100.0f64;
+                        let (mut events, scrollbar) = widget::ListSelect::single(list.len())
+                            .flow_down()
+                            .item_size(60.0)
+                            .scrollbar_next_to()
+                            .top_left_with_margins_on(ids.settings, 0.0, 0.0)
+                            .w(WIDTH_PORTS)
+                            .set(ids.ports, ui);
+
+                        while let Some(event) = events.next(ui, |_i| {
+                            println!("_i: {:?}", _i);
+                            Some(_i) == selected
+                        }) {
+                            use conrod::widget::list_select::Event;
+                            match event {
+                                // For the `Item` events we instantiate the `List`'s items.
+                                Event::Item(item) => {
+                                    let label = &list[item.i].port_name;
+
+                                    let button = widget::Button::new()
+                                        .color(conrod::color::LIGHT_BLUE)
+                                        .label(label)
+                                        .label_font_size(30)
+                                        .label_color(conrod::color::YELLOW);
+                                    item.set(button, ui);
+                                }
+
+                                // The selection has changed.
+                                Event::Selection(selection) => {
+                                    //selection.update_index_set(&mut list_selected);
+                                    println!("selected indices: {:?}", selection);
+                                }
+
+                                // The remaining events indicate interactions with the `ListSelect` widget.
+                                _event => {
+                                    ()
+                                    //println!("{:?}", &event),
+                                }
+                            }
+                        }
+
+                        // Instantiate the scrollbar for the list.
+                        if let Some(s) = scrollbar {
+                            s.set(ui);
+                        }
+            */
+            let r: conrod::Scalar = 50.0;
+            conrod::widget::Circle::fill(20.0)
+                .parent(ids.settings)
+                .bottom_right()
+                .color(conrod::color::GREEN)
+                .set(ids.led1, ui);
+            /*
+                        fn text(text: widget::Text) -> widget::Text {
+                            text.color(color::BLACK).font_size(36)
+                        }
+            */
             /*
             let frequency = f.to_string() + "Hz";
             widget::Text::new(&frequency)
