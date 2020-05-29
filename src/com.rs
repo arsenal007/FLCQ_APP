@@ -6,8 +6,79 @@ extern crate serialport;
 
 //use serialport::prelude::*;
 
+fn timeout<P: serialport::SerialPort, T: std::fmt::Display>(port: &P, s: &T) -> () {
+    match port.name() {
+        Some(name) => println!("{}: Timeout port \"{}\"", s, name),
+        None => println!("\"{}\" port name is not avilable", s),
+    }
+}
+
+fn eeprom_write_byte<P: serialport::SerialPort>(port: &P, address: &u8, data: &u8) -> () {
+    let write_data = vec![0x03u8, *data, *address, 0xFFu8, 0xFFu8];
+
+    match port.write(&write_data) {
+        Ok(_) => {
+            let mut read_data = vec![0; 5];
+            match port.read(&mut read_data) {
+                Ok(_n) => {
+                    if read_data[0] == 0x04
+                        && read_data[1] == *data
+                        && read_data[2] == *address
+                        && _n == 5
+                    {
+                        ()
+                    }
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
+                    port,
+                    &std::string::String::from(" [eeprom write byte respond ] "),
+                ),
+                Err(e) => eprintln!("{:?}", e),
+            }
+        }
+        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
+            port,
+            &std::string::String::from(" [eeprom write byte request ] "),
+        ),
+        Err(e) => panic!("Error while writing data to the port: {}", e),
+    };
+}
+
+fn eeprom_read_byte<P: serialport::SerialPort>(port: &P, adrress: &u8) -> u8 {
+    let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];
+
+    match port.write(&write_data) {
+        Ok(_) => (),
+        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
+            port,
+            &std::string::String::from(" [ eeprom read byte request ] "),
+        ),
+        Err(e) => eprintln!("{:?}", e),
+    }
+    let mut read_data = vec![0; 5];
+    match port.read(&mut read_data) {
+        Ok(_n) => {
+            //println!("{} {} {}", read_data[0], read_data[1], read_data[2]);
+            if read_data[0] == 0x04 && read_data[2] == *adrress && _n == 5 {
+                read_data[1]
+            } else {
+                eprintln!("return address is different as in read command");
+                0xFFu8
+            }
+        }
+        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
+            timeout(port, &std::string::String::from(" [ eeprom read byte ] "));
+            0xFFu8
+        }
+        Err(e) => {
+            eprintln!("{:?}", e);
+            0xFFu8
+        }
+    }
+}
+
 pub struct Flcq {
-    port: Box<dyn serialport::SerialPort>,
+    port: Option<Box<dyn serialport::SerialPort>>,
 }
 
 impl Flcq {
@@ -16,7 +87,7 @@ impl Flcq {
         settings.timeout = std::time::Duration::from_millis(100000);
         settings.baud_rate = 57600u32;
         match serialport::open_with_settings(&port_name, &settings) {
-            Ok(result) => Flcq { port: result },
+            Ok(result) => Flcq { port: Some(result) },
             Err(e) => {
                 eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
                 ::std::process::exit(1);
@@ -26,82 +97,22 @@ impl Flcq {
 }
 
 impl Flcq {
-    fn timeout<T: std::fmt::Display>(&self, s: &T) -> () {
-        match self.port.name() {
-            Some(name) => println!("{}: Timeout port \"{}\"", s, name),
-            None => println!("\"{}\" port name is not avilable", s),
-        }
+    pub fn disconnect(&mut self) {
+        self.port = None;
     }
 }
 
-impl Flcq {
-    fn eeprom_write_byte(&mut self, address: &u8, data: &u8) -> () {
-        let write_data = vec![0x03u8, *data, *address, 0xFFu8, 0xFFu8];
+impl Flcq {}
 
-        match self.port.write(&write_data) {
-            Ok(_) => {
-                let mut read_data = vec![0; 5];
-                match self.port.read(&mut read_data) {
-                    Ok(_n) => {
-                        if read_data[0] == 0x04
-                            && read_data[1] == *data
-                            && read_data[2] == *address
-                            && _n == 5
-                        {
-                            ()
-                        }
-                    }
-                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                        self.timeout(&std::string::String::from(" [eeprom write byte] "))
-                    }
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (),
-            Err(e) => panic!("Error while writing data to the port: {}", e),
-        };
-    }
-}
-
-impl Flcq {
-    fn eeprom_read_byte(&mut self, adrress: &u8) -> u8 {
-        let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];
-
-        match self.port.write(&write_data) {
-            Ok(_) => (),
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                self.timeout(&std::string::String::from(" [ query for write eeprom ] "))
-            }
-            Err(e) => eprintln!("{:?}", e),
-        }
-        let mut read_data = vec![0; 5];
-        match self.port.read(&mut read_data) {
-            Ok(_n) => {
-                //println!("{} {} {}", read_data[0], read_data[1], read_data[2]);
-                if read_data[0] == 0x04 && read_data[2] == *adrress && _n == 5 {
-                    read_data[1]
-                } else {
-                    eprintln!("return address is different as in read command");
-                    0xFFu8
-                }
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                self.timeout(&std::string::String::from(" [ eeprom read byte ] "));
-                0xFFu8
-            }
-            Err(e) => {
-                eprintln!("{:?}", e);
-                0xFFu8
-            }
-        }
-    }
-}
+impl Flcq {}
 
 impl Flcq {
     fn eeprom_write_f64(&mut self, _adrress: &u8, _value: &f64) -> () {
+        let b = _value.clone();
+        let _byte_array: f64;
         unsafe {
-            let b = _value.clone();
-            let _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);
+             _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);
+        }
             for (i, item) in _byte_array.iter().enumerate() {
                 let adrress = *_adrress + i as u8;
                 //println!("{} {}", i, item);

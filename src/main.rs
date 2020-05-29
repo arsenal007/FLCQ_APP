@@ -34,21 +34,13 @@ conrod::widget_ids! {
         top,
         led1,
         label_port,
+        connect_button,
     }
 }
 
 fn main() {
-    /*let matches = App::new("Serialport Example - Receive Data")
-        .about("Reads data from a serial port and echoes it to stdout")
-        .setting(AppSettings::DisableVersion)
-        .arg(
-            Arg::with_name("port")
-                .help("The device path to a serial port")
-                .use_delimiter(false)
-                .required(true),
-        )
-        .get_matches();
-    let mut flcq = com::open(matches.value_of("port").unwrap());*/
+    let mut flcq: com::Flcq;
+    let mut flcq_is_init: bool = false;
 
     //_flcq.eeprom_write_f64(&0u8, &128.0f64);
     //println!("{:?}", _flcq.eeprom_read_f64(&0u8));
@@ -64,8 +56,9 @@ fn main() {
     //let t = _flcq.eeprom_read_f64(&8u8);
     //println!(        "measurments period {:?}sec, calibration temperature {}, current temperature {}",        period,        t,        _flcq.get_temperature()    );
     //println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
-    const WIDTH: u32 = 800;
-    const HEIGHT: u32 = 200;
+
+    const WIDTH: u32 = 400;
+    const HEIGHT: u32 = 400;
 
     let mut events_loop = glium::glutin::EventsLoop::new();
     let window = glium::glutin::WindowBuilder::new().with_title("FLCQ");
@@ -90,7 +83,9 @@ fn main() {
 
     let mut a = Vec::new();
 
-    for x in list {
+    let mut selected_uart_port: std::option::Option<usize> = Some(0usize);
+
+    for x in &list {
         a.push(x.port_name.clone());
     }
 
@@ -143,11 +138,15 @@ fn main() {
                         ids.top,
                         widget::Canvas::new()
                             .color(conrod::color::WHITE)
-                            .length(700.0),
+                            .length(678.0)
+                            .pad(0.0),
                     ),
                     (
                         ids.settings,
-                        widget::Canvas::new().color(conrod::color::WHITE),
+                        widget::Canvas::new()
+                            .color(conrod::color::WHITE)
+                            .length(70.0)
+                            .pad(0.0),
                     ),
                 ])
                 .set(ids.master, ui);
@@ -164,7 +163,7 @@ fn main() {
             .color(conrod::color::WHITE)
             .label_color(conrod::color::BLACK)
             .starting_canvas(ids.tab_frequency)
-            .label_font_size(40)
+            .label_font_size(38)
             .set(ids.tabs, ui);
 
             const MARGIN: conrod::Scalar = 0.0;
@@ -173,23 +172,66 @@ fn main() {
                 //.padded_w_of(ids.left_col, PAD)
                 .mid_left_with_margin_on(ids.settings, MARGIN)
                 .color(conrod::color::BLACK)
-                .font_size(40)
+                .font_size(38)
                 .line_spacing(0.0)
                 .set(ids.label_port, ui);
 
-            const WIDTH_PORT: conrod::Scalar = 20.0;
+            const WIDTH_PORT: conrod::Scalar = 40.0;
 
-            widget::DropDownList::new(&a, Some(1usize))
+            let ports = widget::DropDownList::new(&a, selected_uart_port)
+                .scrollbar_next_to()
                 .max_visible_items(1usize)
                 .h_of(ids.settings)
                 .w(300.0)
                 .scrollbar_width(WIDTH_PORT)
-                .scrollbar_on_top()
-                .color(color::WHITE)
-                .label_font_size(40)
+                .color(color::YELLOW)
+                .label_font_size(38)
+                .center_justify_label()
                 .top_left_with_margins_on(ids.settings, 0.0, 300.0)
                 .set(ids.ports, ui);
 
+            match ports {
+                Some(id) => {
+                    println!("id {}\n", id);
+                    selected_uart_port = Some(id)
+                }
+                None => (),
+            }
+
+            if flcq_is_init {
+                let button = "Disconnect";
+                if widget::Button::new()
+                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)
+                    .h_of(ids.settings)
+                    .w(300.0)
+                    .label(button)
+                    .label_font_size(38)
+                    .set(ids.connect_button, ui)
+                    .was_clicked()
+                {
+                    flcq.disconnect();
+                    flcq_is_init = false;
+                }
+            } else {
+                let button = "Connect";
+                if widget::Button::new()
+                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)
+                    .h_of(ids.settings)
+                    .w(300.0)
+                    .label(button)
+                    .label_font_size(38)
+                    .set(ids.connect_button, ui)
+                    .was_clicked()
+                {
+                    match selected_uart_port {
+                        Some(id) => {
+                            flcq = com::open(&list[id].port_name);
+                            flcq_is_init = true;
+                        }
+                        None => (),
+                    }
+                }
+            }
             /*
                         const WIDTH_PORTS: conrod::Scalar = 100.0f64;
                         let (mut events, scrollbar) = widget::ListSelect::single(list.len())
@@ -237,12 +279,21 @@ fn main() {
                             s.set(ui);
                         }
             */
-            let r: conrod::Scalar = 50.0;
-            conrod::widget::Circle::fill(20.0)
-                .parent(ids.settings)
-                .bottom_right()
-                .color(conrod::color::GREEN)
-                .set(ids.led1, ui);
+
+            if flcq_is_init {
+                let color = conrod::color::GREEN;
+                conrod::widget::Circle::fill(30.0)
+                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
+                    .color(color)
+                    .set(ids.led1, ui);
+            } else {
+                let color = conrod::color::RED;
+                conrod::widget::Circle::fill(30.0)
+                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
+                    .color(color)
+                    .set(ids.led1, ui);
+            }
+
             /*
                         fn text(text: widget::Text) -> widget::Text {
                             text.color(color::BLACK).font_size(36)
