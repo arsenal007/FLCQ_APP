@@ -39,9 +39,7 @@ conrod::widget_ids! {
 }
 
 fn main() {
-    let mut flcq: com::Flcq;
-    let mut flcq_is_init: bool = false;
-
+    let mut flcq: com::Flcq = com::init();
     //_flcq.eeprom_write_f64(&0u8, &128.0f64);
     //println!("{:?}", _flcq.eeprom_read_f64(&0u8));
     //let t = _flcq.get_temperature();
@@ -198,7 +196,7 @@ fn main() {
                 None => (),
             }
 
-            if flcq_is_init {
+            if flcq.is_init() {
                 let button = "Disconnect";
                 if widget::Button::new()
                     .top_left_with_margins_on(ids.settings, 0.0, 600.0)
@@ -210,7 +208,6 @@ fn main() {
                     .was_clicked()
                 {
                     flcq.disconnect();
-                    flcq_is_init = false;
                 }
             } else {
                 let button = "Connect";
@@ -226,7 +223,6 @@ fn main() {
                     match selected_uart_port {
                         Some(id) => {
                             flcq = com::open(&list[id].port_name);
-                            flcq_is_init = true;
                         }
                         None => (),
                     }
@@ -280,7 +276,7 @@ fn main() {
                         }
             */
 
-            if flcq_is_init {
+            if flcq.is_init() {
                 let color = conrod::color::GREEN;
                 conrod::widget::Circle::fill(30.0)
                     .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
