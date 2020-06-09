@@ -37,6 +37,7 @@ conrod::widget_ids! {
         connect_button,
         count_frequency_slider,
         count_label,
+        count_label_info,
     }
 }
 
@@ -253,10 +254,35 @@ fn main() {
                 count = value.round() as u8;
             }
 
-            const PAD1: conrod::Scalar = 145.0;
+            const TICKS_BOTTOM_PAD: conrod::Scalar = 155.0;
+            const TICKS_INFO_LEFT_PAD: conrod::Scalar = 30.0;
+            let text = "Period ticks: ".to_string();
 
-            widget::Text::new(&count.to_string())
-                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD1)
+            widget::Text::new(&text)
+                .bottom_left_with_margins_on(
+                    ids.tab_frequency_calibration,
+                    TICKS_BOTTOM_PAD,
+                    TICKS_INFO_LEFT_PAD,
+                )
+                .color(conrod::color::BLACK)
+                .font_size(38)
+                .line_spacing(1.0)
+                .set(ids.count_label_info, ui);
+
+            let text = format!("{:>5}", count);
+            let text = text + " [aprox. ";
+            let pp = format!("{:.5}", (count as f64) * 0.1048576);
+            let text = text + &pp;
+            let text = text + " Sec ]";
+
+            const TICKS_LEFT_PAD: conrod::Scalar = 250.0;
+
+            widget::Text::new(&text)
+                .bottom_left_with_margins_on(
+                    ids.tab_frequency_calibration,
+                    TICKS_BOTTOM_PAD,
+                    TICKS_LEFT_PAD,
+                )
                 .color(conrod::color::BLACK)
                 .font_size(38)
                 .line_spacing(1.0)
