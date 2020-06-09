@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"fre",
+				"frequency"
+			],
+			[
 				"port",
 				"port_name"
 			],
@@ -104,10 +108,6 @@
 				"frequency"
 			],
 			[
-				"fre",
-				"frequencies"
-			],
-			[
 				"fe",
 				"frequency"
 			],
@@ -141,10 +141,13 @@
 			}
 		},
 		{
+			"contents": "extern crate clap;\nextern crate dirs;\nextern crate serialport;\n\n//use std::io::{self, Write};\n\n#[macro_use]\nextern crate conrod;\n\nuse clap::{App, AppSettings, Arg};\nuse conrod::backend::glium::glium::{self, Surface};\nuse conrod::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget};\nmod com;\n\nconrod::widget_ids! {\n    struct Ids {\n        master,\n        middle_col,\n        right_col,\n        left_text,\n        middle_text,\n        right_text,\n        text,\n        refresh,\n        tab_frequency,\n        tab_frequency_calibration,\n        tab_capacity,\n        label_frequency,\n        label_frequency_calibration,\n        label_capacity,\n        tabs,\n        ports,\n        settings,\n        top,\n        led1,\n        label_port,\n        connect_button,\n        count_frequency_slider,\n        count_label,\n    }\n}\n\nfn main() {\n    let mut flcq: com::Flcq = com::init();\n    //_flcq.eeprom_write_f64(&0u8, &128.0f64);\n    //println!(\"{:?}\", _flcq.eeprom_read_f64(&0u8));\n    //let t = _flcq.get_temperature();\n    //_flcq.eeprom_write_f64(&8u8, &t);\n    //let period = _flcq.get_frequency_c(254u8) / 3000000.0f64;\n    //let period = _flcq.eeprom_read_f64(&16u8);\n\n    //let period = flcq.eeprom_read_f64(&40u8);\n    //let f = flcq.get_frequency_c(254u8) / period;\n\n    //_flcq.eeprom_write_f64(&40u8, &period);\n    //let t = _flcq.eeprom_read_f64(&8u8);\n    //println!(        \"measurments period {:?}sec, calibration temperature {}, current temperature {}\",        period,        t,        _flcq.get_temperature()    );\n    //println!(\"frequency {:?}Hz\", _flcq.get_frequency_c(254u8) / period);\n\n    const WIDTH: u32 = 400;\n    const HEIGHT: u32 = 400;\n\n    let mut events_loop = glium::glutin::EventsLoop::new();\n    let window = glium::glutin::WindowBuilder::new().with_title(\"FLCQ\");\n\n    let context = glium::glutin::ContextBuilder::new()\n        .with_vsync(true)\n        .with_multisampling(4);\n    let display = glium::Display::new(window, context, &events_loop).unwrap();\n    let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();\n    let home_dir = dirs::home_dir().unwrap();\n    //let font_folder = find_folder::Search::KidsThenParents(100, 100)        .for_folder(\"Noto-hinted\")        .unwrap();\n    let rdir = home_dir.to_str().unwrap();\n    ui.fonts\n        .insert_from_file(\"C:\\\\Users\\\\Vasyl\\\\Downloads\\\\Noto-hinted\\\\NotoSans-Regular.ttf\")\n        .unwrap();\n\n    let ids = Ids::new(ui.widget_id_generator());\n    let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();\n    let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();\n\n    let list = com::ports().unwrap();\n\n    let mut a = Vec::new();\n\n    let mut selected_uart_port: std::option::Option<usize> = Some(0usize);\n\n    for x in &list {\n        a.push(x.port_name.clone());\n    }\n\n    let count_min = 1.0;\n    let count_max = 254.0;\n\n    let t = count_max - count_min;\n    let t = t * 0.1;\n    let mut oval_range = (count_max, count_max + t);\n    let frequency_count_intervals = (count_min, count_max + t);\n\n    'render: loop {\n        // Handle all events.\n        let mut events = Vec::new();\n\n        events_loop.poll_events(|event| events.push(event));\n        if events.is_empty() {\n            events_loop.run_forever(|event| {\n                events.push(event);\n                glium::glutin::ControlFlow::Break\n            });\n        }\n\n        for event in events.drain(..) {\n            match event.clone() {\n                glium::glutin::Event::WindowEvent { event, .. } => match event {\n                    glium::glutin::WindowEvent::CloseRequested\n                    | glium::glutin::WindowEvent::KeyboardInput {\n                        input:\n                            glium::glutin::KeyboardInput {\n                                virtual_keycode: Some(glium::glutin::VirtualKeyCode::Escape),\n                                ..\n                            },\n                        ..\n                    } => break 'render,\n                    _ => (),\n                },\n                _ => (),\n            }\n\n            // Use the `winit` backend feature to convert the winit event to a conrod input.\n            let input = match conrod::backend::winit::convert_event(event, &display) {\n                None => continue,\n                Some(input) => input,\n            };\n\n            // Handle the input with the `Ui`.\n            ui.handle_event(input);\n\n            let ui = &mut ui.set_widgets();\n\n            //let s = period.to_string() + \"Sec\";\n\n            // Our `Canvas` tree, upon which we will place our text widgets.\n            widget::Canvas::new()\n                .flow_down(&[\n                    (\n                        ids.top,\n                        widget::Canvas::new()\n                            .color(conrod::color::WHITE)\n                            .length(678.0)\n                            .pad(0.0),\n                    ),\n                    (\n                        ids.settings,\n                        widget::Canvas::new()\n                            .color(conrod::color::WHITE)\n                            .length(70.0)\n                            .pad(0.0),\n                    ),\n                ])\n                .set(ids.master, ui);\n\n            conrod::widget::Tabs::new(&[\n                (ids.tab_frequency, \"FREQUENCY\"),\n                (ids.tab_frequency_calibration, \"frequency calibration\"),\n                (ids.tab_capacity, \"capacity measurments\"),\n            ])\n            .parent(ids.top)\n            .middle()\n            .layout_horizontally()\n            .color(conrod::color::WHITE)\n            .label_color(conrod::color::BLACK)\n            .starting_canvas(ids.tab_frequency)\n            .label_font_size(38)\n            .set(ids.tabs, ui);\n\n            const MARGIN: conrod::Scalar = 0.0;\n\n            widget::Text::new(\"UART PORT: \")\n                //.padded_w_of(ids.left_col, PAD)\n                .mid_left_with_margin_on(ids.settings, MARGIN)\n                .color(conrod::color::BLACK)\n                .font_size(38)\n                .line_spacing(0.0)\n                .set(ids.label_port, ui);\n\n            const WIDTH_PORT: conrod::Scalar = 40.0;\n\n            let ports = widget::DropDownList::new(&a, selected_uart_port)\n                .scrollbar_next_to()\n                .max_visible_items(1usize)\n                .h_of(ids.settings)\n                .w(300.0)\n                .scrollbar_width(WIDTH_PORT)\n                .color(color::YELLOW)\n                .label_font_size(38)\n                .center_justify_label()\n                .top_left_with_margins_on(ids.settings, 0.0, 300.0)\n                .set(ids.ports, ui);\n\n            match ports {\n                Some(id) => {\n                    println!(\"id {}\\n\", id);\n                    selected_uart_port = Some(id)\n                }\n                None => (),\n            }\n\n            if flcq.is_init() {\n                let button = \"Click to Disconnect\";\n                if widget::Button::new()\n                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)\n                    .h_of(ids.settings)\n                    .w(300.0)\n                    .label(button)\n                    .label_font_size(38)\n                    .color(conrod::color::GREEN)\n                    .set(ids.connect_button, ui)\n                    .was_clicked()\n                {\n                    flcq.disconnect();\n                }\n            } else {\n                let button = \"Click to Connect\";\n                if widget::Button::new()\n                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)\n                    .h_of(ids.settings)\n                    .w(300.0)\n                    .label(button)\n                    .label_font_size(38)\n                    .color(conrod::color::RED)\n                    .set(ids.connect_button, ui)\n                    .was_clicked()\n                {\n                    match selected_uart_port {\n                        Some(id) => {\n                            flcq = com::open(&list[id].port_name);\n                        }\n                        None => (),\n                    }\n                }\n            }\n\n            const PAD: conrod::Scalar = 100.0;\n\n            let (ref mut start, ref mut end) = oval_range;\n\n          \n\n            let (min, max) = frequency_count_intervals;\n\n            for (edge, value) in widget::RangeSlider::new(*start, *end, min, max)\n                .color(color::LIGHT_BLUE)\n                .w_of(ids.tab_frequency_calibration)\n                .h(40.0)\n                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD)\n                .set(ids.count_frequency_slider, ui)\n            {\n                match edge {\n                    widget::range_slider::Edge::Start => {\n                        println!(\"start {}\", value);\n                        *start = value;\n                    }\n                    widget::range_slider::Edge::End => {\n                        println!(\"end {}\", value);\n                        *end = value;\n                    }\n                }\n            }\n            const PAD1: conrod::Scalar = 140.0;\n            widget::Text::new(&*start.to_string())\n                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD1)\n                .color(conrod::color::BLACK)\n                .font_size(38)\n                .line_spacing(0.0)\n                .set(ids.count_label, ui);\n\n            /*\n                        const WIDTH_PORTS: conrod::Scalar = 100.0f64;\n                        let (mut events, scrollbar) = widget::ListSelect::single(list.len())\n                            .flow_down()\n                            .item_size(60.0)\n                            .scrollbar_next_to()\n                            .top_left_with_margins_on(ids.settings, 0.0, 0.0)\n                            .w(WIDTH_PORTS)\n                            .set(ids.ports, ui);\n\n                        while let Some(event) = events.next(ui, |_i| {\n                            println!(\"_i: {:?}\", _i);\n                            Some(_i) == selected\n                        }) {\n                            use conrod::widget::list_select::Event;\n                            match event {\n                                // For the `Item` events we instantiate the `List`'s items.\n                                Event::Item(item) => {\n                                    let label = &list[item.i].port_name;\n\n                                    let button = widget::Button::new()\n                                        .color(conrod::color::LIGHT_BLUE)\n                                        .label(label)\n                                        .label_font_size(30)\n                                        .label_color(conrod::color::YELLOW);\n                                    item.set(button, ui);\n                                }\n\n                                // The selection has changed.\n                                Event::Selection(selection) => {\n                                    //selection.update_index_set(&mut list_selected);\n                                    println!(\"selected indices: {:?}\", selection);\n                                }\n\n                                // The remaining events indicate interactions with the `ListSelect` widget.\n                                _event => {\n                                    ()\n                                    //println!(\"{:?}\", &event),\n                                }\n                            }\n                        }\n\n                        // Instantiate the scrollbar for the list.\n                        if let Some(s) = scrollbar {\n                            s.set(ui);\n                        }\n            */\n\n            if flcq.is_init() {\n                let color = conrod::color::GREEN;\n                conrod::widget::Circle::fill(30.0)\n                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)\n                    .color(color)\n                    .set(ids.led1, ui);\n            } else {\n                let color = conrod::color::RED;\n                conrod::widget::Circle::fill(30.0)\n                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)\n                    .color(color)\n                    .set(ids.led1, ui);\n            }\n\n            /*\n                        fn text(text: widget::Text) -> widget::Text {\n                            text.color(color::BLACK).font_size(36)\n                        }\n            */\n            /*\n            let frequency = f.to_string() + \"Hz\";\n            widget::Text::new(&frequency)\n                //.padded_w_of(ids.left_col, PAD)\n                .mid_top_with_margin_on(ids.left_col, PAD)\n                .color(conrod::color::BLACK)\n                .font_size(22)\n                .left_justify()\n                .line_spacing(10.0)\n                .set(ids.left_text, ui);\n\n            widget::Text::new(&s)\n                .mid_top_with_margin_on(ids.middle_col, PAD)\n                .color(conrod::color::BLACK)\n                .font_size(22)\n                .set(ids.middle_text, ui);\n\n            let temperature = flcq.t().to_string() + \"C\";\n            conrod::widget::Text::new(&temperature)\n                .mid_top_with_margin_on(ids.right_col, PAD)\n                .color(conrod::color::BLACK)\n                .font_size(22)\n                .set(ids.right_text, ui);\n\n            for _click in conrod::widget::Button::new()\n                .middle_of(ids.left_col)\n                .set(ids.refresh, ui)\n            {\n                ();\n            }*/\n        }\n\n        // Render the `Ui` and then display it on the screen.\n        if let Some(primitives) = ui.draw_if_changed() {\n            renderer.fill(&display, primitives, &image_map);\n            let mut target = display.draw();\n            target.clear_color(1.0, 1.0, 1.0, 1.0);\n            renderer.draw(&display, &mut target, &image_map).unwrap();\n            target.finish().unwrap();\n        }\n    }\n}\n\nfn set_ui(ref mut ui: conrod::UiCell, ids: &Ids) {}\n",
 			"file": "src/main.rs",
+			"file_size": 14485,
+			"file_write_time": 132354075966142676,
 			"settings":
 			{
-				"buffer_size": 12602,
+				"buffer_size": 14112,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -161,7 +164,7 @@
 			"file": "src/com.rs",
 			"settings":
 			{
-				"buffer_size": 10028,
+				"buffer_size": 12291,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -402,7 +405,7 @@
 	],
 	"find":
 	{
-		"height": 27.0
+		"height": 39.0
 	},
 	"find_in_files":
 	{
@@ -416,6 +419,9 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"flcq",
+			"},\n",
+			"}\n",
 			"_port",
 			"()\n",
 			"if let Some(event)",
@@ -444,7 +450,7 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -481,15 +487,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 12602,
+						"buffer_size": 14112,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7105,
-								7105
+								8454,
+								8442
 							]
 						],
 						"settings":
@@ -499,10 +505,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3546.0,
+						"translation.y": 4191.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -539,15 +545,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10028,
+						"buffer_size": 12291,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								953,
-								953
+								12288,
+								12288
 							]
 						],
 						"settings":
@@ -557,10 +563,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 108.0,
+						"translation.y": 4136.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -627,7 +633,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 202.0
+		"height": 170.0
 	},
 	"output.find_results":
 	{

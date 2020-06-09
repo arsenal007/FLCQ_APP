@@ -35,6 +35,8 @@ conrod::widget_ids! {
         led1,
         label_port,
         connect_button,
+        count_frequency_slider,
+        count_label,
     }
 }
 
@@ -86,6 +88,10 @@ fn main() {
     for x in &list {
         a.push(x.port_name.clone());
     }
+
+    let frequency_count_intervals = (1.0, 254.0);
+
+    let mut count: u8 = 254u8;
 
     'render: loop {
         // Handle all events.
@@ -150,11 +156,10 @@ fn main() {
                 .set(ids.master, ui);
 
             conrod::widget::Tabs::new(&[
-                (ids.tab_frequency, "frequency"),
+                (ids.tab_frequency, "FREQUENCY"),
                 (ids.tab_frequency_calibration, "frequency calibration"),
                 (ids.tab_capacity, "capacity measurments"),
             ])
-            //.wh_of(ids.master)
             .parent(ids.top)
             .middle()
             .layout_horizontally()
@@ -197,26 +202,28 @@ fn main() {
             }
 
             if flcq.is_init() {
-                let button = "Disconnect";
+                let button = "Click to Disconnect";
                 if widget::Button::new()
                     .top_left_with_margins_on(ids.settings, 0.0, 600.0)
                     .h_of(ids.settings)
-                    .w(300.0)
+                    .w(350.0)
                     .label(button)
                     .label_font_size(38)
+                    .color(conrod::color::GREEN)
                     .set(ids.connect_button, ui)
                     .was_clicked()
                 {
                     flcq.disconnect();
                 }
             } else {
-                let button = "Connect";
+                let button = "Click to Connect";
                 if widget::Button::new()
                     .top_left_with_margins_on(ids.settings, 0.0, 600.0)
                     .h_of(ids.settings)
-                    .w(300.0)
+                    .w(350.0)
                     .label(button)
                     .label_font_size(38)
+                    .color(conrod::color::RED)
                     .set(ids.connect_button, ui)
                     .was_clicked()
                 {
@@ -228,6 +235,33 @@ fn main() {
                     }
                 }
             }
+
+            const PAD: conrod::Scalar = 100.0;
+
+            let (min, max) = frequency_count_intervals;
+
+            for value in widget::Slider::new(count as f64, min, max)
+                .color(color::LIGHT_BLUE)
+                .w_of(ids.tab_frequency_calibration)
+                .h(40.0)
+                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD)
+                .set(ids.count_frequency_slider, ui)
+            {
+                println!("start {}", value);
+
+                let value: f64 = value;
+                count = value.round() as u8;
+            }
+
+            const PAD1: conrod::Scalar = 145.0;
+
+            widget::Text::new(&count.to_string())
+                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD1)
+                .color(conrod::color::BLACK)
+                .font_size(38)
+                .line_spacing(1.0)
+                .set(ids.count_label, ui);
+
             /*
                         const WIDTH_PORTS: conrod::Scalar = 100.0f64;
                         let (mut events, scrollbar) = widget::ListSelect::single(list.len())
