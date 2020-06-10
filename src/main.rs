@@ -36,8 +36,10 @@ conrod::widget_ids! {
         label_port,
         connect_button,
         count_frequency_slider,
-        count_label,
         count_label_info,
+        count_label,
+        count_label_approx_in_sec,
+        ref_frequency,
     }
 }
 
@@ -93,6 +95,7 @@ fn main() {
     let frequency_count_intervals = (1.0, 254.0);
 
     let mut count: u8 = 254u8;
+    let mut ref_frequency = "1000000.0".to_string();
 
     'render: loop {
         // Handle all events.
@@ -248,8 +251,7 @@ fn main() {
                 .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD)
                 .set(ids.count_frequency_slider, ui)
             {
-                println!("start {}", value);
-
+                //println!("start {}", value);
                 let value: f64 = value;
                 count = value.round() as u8;
             }
@@ -266,27 +268,61 @@ fn main() {
                 )
                 .color(conrod::color::BLACK)
                 .font_size(38)
-                .line_spacing(1.0)
+                .line_spacing(3.0)
                 .set(ids.count_label_info, ui);
 
-            let text = format!("{:>5}", count);
-            let text = text + " [aprox. ";
-            let pp = format!("{:.5}", (count as f64) * 0.1048576);
-            let text = text + &pp;
-            let text = text + " Sec ]";
+            let text = format!("{:}", count);
 
-            const TICKS_LEFT_PAD: conrod::Scalar = 250.0;
+            const TICKS_COUNT_LEFT_PAD: conrod::Scalar = 250.0;
 
             widget::Text::new(&text)
                 .bottom_left_with_margins_on(
                     ids.tab_frequency_calibration,
                     TICKS_BOTTOM_PAD,
-                    TICKS_LEFT_PAD,
+                    TICKS_COUNT_LEFT_PAD,
+                )
+                .color(conrod::color::BLACK)
+                .font_size(38)
+                .line_spacing(3.0)
+                .set(ids.count_label, ui);
+
+            let text = " [aprox. ".to_string();
+            let pp = format!("{:.5}", (count as f64) * 0.1048576);
+            let text = text + &pp;
+            let text = text + " Sec ]";
+
+            const TICKS_IN_SEC_APPROX_LEFT_PAD: conrod::Scalar = 350.0;
+
+            widget::Text::new(&text)
+                .bottom_left_with_margins_on(
+                    ids.tab_frequency_calibration,
+                    TICKS_BOTTOM_PAD,
+                    TICKS_IN_SEC_APPROX_LEFT_PAD,
                 )
                 .color(conrod::color::BLACK)
                 .font_size(38)
                 .line_spacing(1.0)
-                .set(ids.count_label, ui);
+                .set(ids.count_label_approx_in_sec, ui);
+
+            const REF_FREQUENCY_BOTTOM_PAD: conrod::Scalar = 300.0;
+            const REF_FREQUENCY_LEFT_PAD: conrod::Scalar = 250.0;
+
+            for edit in widget::TextEdit::new(&ref_frequency)
+                .bottom_left_with_margins_on(
+                    ids.tab_frequency_calibration,
+                    REF_FREQUENCY_BOTTOM_PAD,
+                    REF_FREQUENCY_LEFT_PAD,
+                )
+                .color(color::BLACK)
+                .font_size(38)
+                .line_spacing(2.0)
+                .wrap_by_character()
+                .restrict_to_height(true) // Let the height grow infinitely and scroll.
+                .set(ids.ref_frequency, ui)
+            {
+                ref_frequency = edit.clone();
+                println!("edit {:?}", edit);
+            }
 
             /*
                         const WIDTH_PORTS: conrod::Scalar = 100.0f64;
