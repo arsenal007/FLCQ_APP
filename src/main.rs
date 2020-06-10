@@ -75,7 +75,7 @@ fn main() {
     //let font_folder = find_folder::Search::KidsThenParents(100, 100)        .for_folder("Noto-hinted")        .unwrap();
     let rdir = home_dir.to_str().unwrap();
     ui.fonts
-        .insert_from_file("C:\\Users\\Vasyl\\Downloads\\Noto-hinted\\NotoSans-Regular.ttf")
+        .insert_from_file("C:\\Windows\\Fonts\\times.ttf")
         .unwrap();
 
     let ids = Ids::new(ui.widget_id_generator());
@@ -95,7 +95,7 @@ fn main() {
     let frequency_count_intervals = (1.0, 254.0);
 
     let mut count: u8 = 254u8;
-    let mut ref_frequency = "1000000.0".to_string();
+    let mut ref_frequency = "1000000.0".to_owned();
 
     'render: loop {
         // Handle all events.
@@ -191,7 +191,7 @@ fn main() {
                 .h_of(ids.settings)
                 .w(300.0)
                 .scrollbar_width(WIDTH_PORT)
-                .color(color::YELLOW)
+                .color(conrod::color::WHITE) // conrod::color::YELLOW
                 .label_font_size(38)
                 .center_justify_label()
                 .top_left_with_margins_on(ids.settings, 0.0, 300.0)
@@ -227,7 +227,7 @@ fn main() {
                     .w(350.0)
                     .label(button)
                     .label_font_size(38)
-                    .color(conrod::color::RED)
+                    .color(conrod::color::WHITE) //RED
                     .set(ids.connect_button, ui)
                     .was_clicked()
                 {
@@ -273,7 +273,7 @@ fn main() {
 
             let text = format!("{:}", count);
 
-            const TICKS_COUNT_LEFT_PAD: conrod::Scalar = 250.0;
+            const TICKS_COUNT_LEFT_PAD: conrod::Scalar = 300.0;
 
             widget::Text::new(&text)
                 .bottom_left_with_margins_on(
@@ -291,7 +291,7 @@ fn main() {
             let text = text + &pp;
             let text = text + " Sec ]";
 
-            const TICKS_IN_SEC_APPROX_LEFT_PAD: conrod::Scalar = 350.0;
+            const TICKS_IN_SEC_APPROX_LEFT_PAD: conrod::Scalar = 400.0;
 
             widget::Text::new(&text)
                 .bottom_left_with_margins_on(
@@ -304,25 +304,9 @@ fn main() {
                 .line_spacing(1.0)
                 .set(ids.count_label_approx_in_sec, ui);
 
-            const REF_FREQUENCY_BOTTOM_PAD: conrod::Scalar = 300.0;
-            const REF_FREQUENCY_LEFT_PAD: conrod::Scalar = 250.0;
 
-            for edit in widget::TextEdit::new(&ref_frequency)
-                .bottom_left_with_margins_on(
-                    ids.tab_frequency_calibration,
-                    REF_FREQUENCY_BOTTOM_PAD,
-                    REF_FREQUENCY_LEFT_PAD,
-                )
-                .color(color::BLACK)
-                .font_size(38)
-                .line_spacing(2.0)
-                .wrap_by_character()
-                .restrict_to_height(true) // Let the height grow infinitely and scroll.
-                .set(ids.ref_frequency, ui)
-            {
-                ref_frequency = edit.clone();
-                println!("edit {:?}", edit);
-            }
+            edit_ref_frequency(ui, &ids, &mut ref_frequency);
+
 
             /*
                         const WIDTH_PORTS: conrod::Scalar = 100.0f64;
@@ -373,16 +357,15 @@ fn main() {
             */
 
             if flcq.is_init() {
-                let color = conrod::color::GREEN;
+                
                 conrod::widget::Circle::fill(30.0)
                     .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
-                    .color(color)
+                    .color(conrod::color::GREEN)
                     .set(ids.led1, ui);
             } else {
-                let color = conrod::color::RED;
                 conrod::widget::Circle::fill(30.0)
                     .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
-                    .color(color)
+                    .color(conrod::color::WHITE) //conrod::color::RED
                     .set(ids.led1, ui);
             }
 
@@ -423,6 +406,9 @@ fn main() {
             }*/
         }
 
+        display.gl_window().window()
+                .set_cursor(conrod::backend::winit::convert_mouse_cursor(ui.mouse_cursor()));
+
         // Render the `Ui` and then display it on the screen.
         if let Some(primitives) = ui.draw_if_changed() {
             renderer.fill(&display, primitives, &image_map);
@@ -434,4 +420,30 @@ fn main() {
     }
 }
 
-fn set_ui(ref mut ui: conrod::UiCell, ids: &Ids) {}
+fn edit_ref_frequency(ui: &mut conrod::UiCell, ids: &Ids, text: &mut String) {
+            const BOTTOM_PAD: conrod::Scalar = 250.0;
+            const LEFT_PAD: conrod::Scalar = 250.0;
+
+            for edit in &widget::TextEdit::new(text)
+                .bottom_left_with_margins_on(
+                    ids.tab_frequency_calibration,
+                    BOTTOM_PAD,
+                    LEFT_PAD,
+                )
+                .color(color::BLACK)
+                .font_size(38)
+                .line_spacing(2.0)
+                .wrap_by_character()
+                .restrict_to_height(false)           // Let the height grow infinitely and scroll.
+                .set(ids.ref_frequency, ui)
+            {
+                
+                let s = edit.clone();
+                let f = s.parse::<f64>().unwrap();
+                println!("edit {:?}", f);
+                *text = edit.clone();
+
+            }
+
+        
+    }

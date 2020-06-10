@@ -7,7 +7,8 @@ authors = ["arsenal007 <fc_arsenal@ukr.net>"]
 
 [dependencies]
 version = "3.*.*"
-serialport = { git = "https://gitlab.com/susurrus/serialport-rs" }
+#serialport = { git = "https://gitlab.com/susurrus/serialport-rs" }
+serialport = "3.3.0"
 clap = "*"
 conrod = { version = "0.61.1", features = ["glium", "winit"] }
 find_folder="0.3.0"
