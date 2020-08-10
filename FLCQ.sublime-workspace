@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"te",
+				"temperature"
+			],
+			[
+				"E",
+				"EFreq"
+			],
+			[
+				"to",
+				"to_string"
+			],
+			[
+				"ref",
+				"ref_frequency"
+			],
+			[
 				"to_",
 				"to_string"
 			],
@@ -80,10 +96,6 @@
 				"middle_col"
 			],
 			[
-				"to",
-				"to_string"
-			],
-			[
 				"ti",
 				"to_string"
 			],
@@ -139,16 +151,16 @@
 			"file": "Cargo.toml",
 			"settings":
 			{
-				"buffer_size": 520,
+				"buffer_size": 542,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
+				"line_ending": "Windows"
 			}
 		},
 		{
 			"file": "src/main.rs",
 			"settings":
 			{
-				"buffer_size": 14559,
+				"buffer_size": 20645,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -157,7 +169,7 @@
 			"file": "Cargo.lock",
 			"settings":
 			{
-				"buffer_size": 64987,
+				"buffer_size": 65004,
 				"line_ending": "Unix"
 			}
 		},
@@ -165,7 +177,7 @@
 			"file": "src/com.rs",
 			"settings":
 			{
-				"buffer_size": 12291,
+				"buffer_size": 13892,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -390,6 +402,7 @@
 	],
 	"file_history":
 	[
+		"/C/Users/Vasyl/Downloads/DHL-Paketmarke_5LYEC43Q8WXG_1_Mustafa_Kocakus.pdf",
 		"/C/Users/Vasyl/FLCQ_APP/src/main.rs",
 		"/C/Users/Vasyl/FLCQ_APP/src/tmpa9cwk6",
 		"/C/Users/Vasyl/FLCQ_APP/.gitignore",
@@ -406,7 +419,7 @@
 	],
 	"find":
 	{
-		"height": 39.0
+		"height": 27.0
 	},
 	"find_in_files":
 	{
@@ -420,6 +433,18 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Slider",
+			"freq_show",
+			"ref_frequency",
+			"edit_ref_frequency",
+			"),\n",
+			"}\n",
+			"edit_ref_frequency",
+			"math",
+			"0",
+			"ref_frequency_1",
+			"update",
+			"ref_frequency",
 			"count",
 			"flcq",
 			"},\n",
@@ -461,7 +486,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 520,
+						"buffer_size": 542,
 						"regions":
 						{
 						},
@@ -489,15 +514,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 14559,
+						"buffer_size": 20645,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8850,
-								8850
+								8853,
+								8853
 							]
 						],
 						"settings":
@@ -507,7 +532,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4965.0,
+						"translation.y": 4096.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -519,7 +544,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 64987,
+						"buffer_size": 65004,
 						"regions":
 						{
 						},
@@ -547,15 +572,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 12291,
+						"buffer_size": 13892,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								12288,
-								12288
+								8559,
+								8560
 							]
 						],
 						"settings":
@@ -565,7 +590,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4136.0,
+						"translation.y": 2330.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
@@ -635,7 +660,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 168.0
+		"height": 173.0
 	},
 	"output.find_results":
 	{

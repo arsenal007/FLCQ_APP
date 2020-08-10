@@ -15,7 +15,14 @@ mod com;
 conrod::widget_ids! {
     struct Ids {
         master,
-        middle_col,
+        top,
+        uart,
+        error,
+        uart_label_port,
+        uart_ports,
+        uart_connect_button,
+        uart_led,
+        error_label,
         right_col,
         left_text,
         middle_text,
@@ -29,17 +36,19 @@ conrod::widget_ids! {
         label_frequency_calibration,
         label_capacity,
         tabs,
-        ports,
-        settings,
-        top,
-        led1,
-        label_port,
-        connect_button,
         count_frequency_slider,
         count_label_info,
         count_label,
         count_label_approx_in_sec,
         ref_frequency,
+        ref_frequency_1,
+        ref_frequency_2,
+        freq_calibration_measure_button,
+        freq_calibration_save_button,
+        freq_calibration_temperature,
+        freq_calibration_period,
+
+
     }
 }
 
@@ -60,8 +69,8 @@ fn main() {
     //println!(        "measurments period {:?}sec, calibration temperature {}, current temperature {}",        period,        t,        _flcq.get_temperature()    );
     //println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
 
-    const WIDTH: u32 = 400;
-    const HEIGHT: u32 = 400;
+    const WIDTH: u32 = 500;
+    const HEIGHT: u32 = 520;
 
     let mut events_loop = glium::glutin::EventsLoop::new();
     let window = glium::glutin::WindowBuilder::new().with_title("FLCQ");
@@ -95,7 +104,9 @@ fn main() {
     let frequency_count_intervals = (1.0, 254.0);
 
     let mut count: u8 = 254u8;
-    let mut ref_frequency = "1000000.0".to_owned();
+    let mut ref_frequency = 1000000.0;
+    let mut temperature = (None, "".to_string());
+    let mut frequency = (None, "".to_string());
 
     'render: loop {
         // Handle all events.
@@ -146,56 +157,61 @@ fn main() {
                         ids.top,
                         widget::Canvas::new()
                             .color(conrod::color::WHITE)
-                            .length(678.0)
+                            .length_weight(0.9)
                             .pad(0.0),
                     ),
                     (
-                        ids.settings,
+                        ids.uart,
                         widget::Canvas::new()
                             .color(conrod::color::WHITE)
-                            .length(70.0)
+                            .length_weight(0.1)
+                            .pad(0.0),
+                    ),
+                    (
+                        ids.error,
+                        widget::Canvas::new()
+                            .color(conrod::color::WHITE)
+                            .length_weight(0.1)
                             .pad(0.0),
                     ),
                 ])
+                .floating(true)
                 .set(ids.master, ui);
 
             conrod::widget::Tabs::new(&[
                 (ids.tab_frequency, "FREQUENCY"),
-                (ids.tab_frequency_calibration, "frequency calibration"),
+                (ids.tab_frequency_calibration, "FREQUENCY CALIBRATION"),
                 (ids.tab_capacity, "capacity measurments"),
             ])
+            .h_of(ids.top)
             .parent(ids.top)
             .middle()
             .layout_horizontally()
             .color(conrod::color::WHITE)
             .label_color(conrod::color::BLACK)
             .starting_canvas(ids.tab_frequency)
-            .label_font_size(38)
+            .label_font_size(50)
             .set(ids.tabs, ui);
-
-            const MARGIN: conrod::Scalar = 0.0;
 
             widget::Text::new("UART PORT: ")
                 //.padded_w_of(ids.left_col, PAD)
-                .mid_left_with_margin_on(ids.settings, MARGIN)
+                .mid_left_with_margin_on(ids.uart, 10.0)
                 .color(conrod::color::BLACK)
-                .font_size(38)
-                .line_spacing(0.0)
-                .set(ids.label_port, ui);
-
-            const WIDTH_PORT: conrod::Scalar = 40.0;
+                .font_size(35)
+                .line_spacing(3.0)
+                .set(ids.uart_label_port, ui);
 
             let ports = widget::DropDownList::new(&a, selected_uart_port)
                 .scrollbar_next_to()
                 .max_visible_items(1usize)
-                .h_of(ids.settings)
+                .h_of(ids.uart)
                 .w(300.0)
-                .scrollbar_width(WIDTH_PORT)
+                .scrollbar_width(40.0)
                 .color(conrod::color::WHITE) // conrod::color::YELLOW
-                .label_font_size(38)
+                .label_font_size(35)
                 .center_justify_label()
-                .top_left_with_margins_on(ids.settings, 0.0, 300.0)
-                .set(ids.ports, ui);
+                .top_left_with_margins_on(ids.uart, 0.0, 300.0)
+                .set(ids.uart_ports, ui);
 
             match ports {
                 Some(id) => {
@@ -206,29 +222,27 @@ fn main() {
             }
 
             if flcq.is_init() {
-                let button = "Click to Disconnect";
                 if widget::Button::new()
-                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)
-                    .h_of(ids.settings)
+                    .top_left_with_margins_on(ids.uart, 0.0, 600.0)
+                    .h_of(ids.uart)
                     .w(350.0)
-                    .label(button)
-                    .label_font_size(38)
+                    .label("Click to Disconnect")
+                    .label_font_size(35)
                     .color(conrod::color::GREEN)
-                    .set(ids.connect_button, ui)
+                    .set(ids.uart_connect_button, ui)
                     .was_clicked()
                 {
                     flcq.disconnect();
                 }
             } else {
-                let button = "Click to Connect";
                 if widget::Button::new()
-                    .top_left_with_margins_on(ids.settings, 0.0, 600.0)
-                    .h_of(ids.settings)
+                    .top_left_with_margins_on(ids.uart, 0.0, 600.0)
+                    .h_of(ids.uart)
                     .w(350.0)
-                    .label(button)
-                    .label_font_size(38)
-                    .color(conrod::color::WHITE) //RED
-                    .set(ids.connect_button, ui)
+                    .label("Click to Connect")
+                    .label_font_size(35)
+                    .color(conrod::color::RED) //RED
+                    .set(ids.uart_connect_button, ui)
                     .was_clicked()
                 {
                     match selected_uart_port {
@@ -240,15 +254,14 @@ fn main() {
                 }
             }
 
-            const PAD: conrod::Scalar = 100.0;
-
             let (min, max) = frequency_count_intervals;
 
             for value in widget::Slider::new(count as f64, min, max)
                 .color(color::LIGHT_BLUE)
+                .h(60.0)
+                .mid_bottom_with_margin_on(ids.top, 5.0)
                 .w_of(ids.tab_frequency_calibration)
-                .h(40.0)
-                .mid_bottom_with_margin_on(ids.tab_frequency_calibration, PAD)
+                .parent(ids.tab_frequency_calibration)
                 .set(ids.count_frequency_slider, ui)
             {
                 //println!("start {}", value);
@@ -256,34 +269,22 @@ fn main() {
                 count = value.round() as u8;
             }
 
-            const TICKS_BOTTOM_PAD: conrod::Scalar = 155.0;
-            const TICKS_INFO_LEFT_PAD: conrod::Scalar = 30.0;
-            let text = "Period ticks: ".to_string();
-
-            widget::Text::new(&text)
-                .bottom_left_with_margins_on(
-                    ids.tab_frequency_calibration,
-                    TICKS_BOTTOM_PAD,
-                    TICKS_INFO_LEFT_PAD,
-                )
+            widget::Text::new("Period ticks: ")
+                .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0, 20.0)
                 .color(conrod::color::BLACK)
-                .font_size(38)
+                .right_justify()
+                .font_size(45)
                 .line_spacing(3.0)
+                .parent(ids.tab_frequency_calibration)
                 .set(ids.count_label_info, ui);
 
-            let text = format!("{:}", count);
-
-            const TICKS_COUNT_LEFT_PAD: conrod::Scalar = 300.0;
-
-            widget::Text::new(&text)
-                .bottom_left_with_margins_on(
-                    ids.tab_frequency_calibration,
-                    TICKS_BOTTOM_PAD,
-                    TICKS_COUNT_LEFT_PAD,
-                )
+            widget::Text::new(&format!("{:}", count))
+                .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0, 350.0)
                 .color(conrod::color::BLACK)
-                .font_size(38)
+                .right_justify()
+                .font_size(45)
                 .line_spacing(3.0)
+                .parent(ids.tab_frequency_calibration)
                 .set(ids.count_label, ui);
 
             let text = " [aprox. ".to_string();
@@ -291,22 +292,92 @@ fn main() {
             let text = text + &pp;
             let text = text + " Sec ]";
 
-            const TICKS_IN_SEC_APPROX_LEFT_PAD: conrod::Scalar = 400.0;
-
             widget::Text::new(&text)
-                .bottom_left_with_margins_on(
-                    ids.tab_frequency_calibration,
-                    TICKS_BOTTOM_PAD,
-                    TICKS_IN_SEC_APPROX_LEFT_PAD,
-                )
+                .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0, 480.0)
                 .color(conrod::color::BLACK)
-                .font_size(38)
-                .line_spacing(1.0)
+                .font_size(45)
+                .line_spacing(3.0)
+                .parent(ids.tab_frequency_calibration)
                 .set(ids.count_label_approx_in_sec, ui);
 
+            let f = ref_frequency;
+            ref_frequency = edit_ref_frequency(ui, &ids, f);
 
-            edit_ref_frequency(ui, &ids, &mut ref_frequency);
+            if widget::Button::new()
+                .w_h(250.0, 100.0)
+                .bottom_left_with_margins_on(ids.tab_frequency_calibration, 450.0, 750.0)
+                .label_font_size(50)
+                .enabled(flcq.is_init())
+                .label("Measure")
+                .parent(ids.tab_frequency_calibration)
+                .set(ids.freq_calibration_measure_button, ui)
+                .was_clicked()
+            {
+                if flcq.is_init() {
+                    temperature = flcq.t();
+                    frequency = flcq.get_frequency_c(&count);
+                }
+            }
 
+            if widget::Button::new()
+                .w_h(250.0, 100.0)
+                .bottom_left_with_margins_on(ids.tab_frequency_calibration, 450.0 - 120.0, 750.0)
+                .label_font_size(50)
+                .enabled(flcq.is_init())
+                .hover_color(conrod::color::YELLOW)
+                .press_color(conrod::color::RED)
+                .label("Save")
+                .set(ids.freq_calibration_save_button, ui)
+                .was_clicked()
+            {
+                if flcq.is_init() {
+                    flcq.eeprom_write_byte(&0u8, &count); // save N count
+                    match &frequency {
+                        (Some(f), _) => flcq.eeprom_write_f64(&1u8, &f),
+                        (None, _) => (),
+                    }
+                    match &temperature {
+                        (Some(t), _) => flcq.eeprom_write_f64(&9u8, &t),
+                        (None, _) => (),
+                    }
+                }
+            }
+
+            match &frequency {
+                (Some(f), _) => {
+                    widget::Text::new(&format!("Mesured Period: {:.5} Sec", f / ref_frequency))
+                        .bottom_left_with_margins_on(ids.tab_frequency_calibration, 480.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .right_justify()
+                        .font_size(45)
+                        .line_spacing(3.0)
+                        .set(ids.freq_calibration_period, ui);
+                }
+                (None, str) => widget::Text::new(&str)
+                    .color(conrod::color::BLACK)
+                    .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                    .right_justify()
+                    .font_size(16)
+                    .line_spacing(3.0)
+                    .set(ids.error_label, ui),
+            }
+
+            match &temperature {
+                (Some(t), _) => widget::Text::new(&format!("Temperature: {:.2} C", t))
+                    .bottom_left_with_margins_on(ids.tab_frequency_calibration, 480.0 - 120.0, 20.0)
+                    .color(conrod::color::BLACK)
+                    .right_justify()
+                    .font_size(45)
+                    .line_spacing(3.0)
+                    .set(ids.freq_calibration_temperature, ui),
+                (None, str) => widget::Text::new(&str)
+                    .color(conrod::color::BLACK)
+                    .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                    .right_justify()
+                    .font_size(16)
+                    .line_spacing(3.0)
+                    .set(ids.error_label, ui),
+            }
 
             /*
                         const WIDTH_PORTS: conrod::Scalar = 100.0f64;
@@ -357,16 +428,15 @@ fn main() {
             */
 
             if flcq.is_init() {
-                
-                conrod::widget::Circle::fill(30.0)
-                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
+                conrod::widget::Circle::fill(25.0)
+                    .bottom_right_with_margins_on(ids.uart, 5.0, 5.0)
                     .color(conrod::color::GREEN)
-                    .set(ids.led1, ui);
+                    .set(ids.uart_led, ui);
             } else {
-                conrod::widget::Circle::fill(30.0)
-                    .bottom_right_with_margins_on(ids.settings, 5.0, 5.0)
-                    .color(conrod::color::WHITE) //conrod::color::RED
-                    .set(ids.led1, ui);
+                conrod::widget::Circle::fill(25.0)
+                    .bottom_right_with_margins_on(ids.uart, 5.0, 5.0)
+                    .color(conrod::color::RED) //conrod::color::RED
+                    .set(ids.uart_led, ui);
             }
 
             /*
@@ -406,8 +476,12 @@ fn main() {
             }*/
         }
 
-        display.gl_window().window()
-                .set_cursor(conrod::backend::winit::convert_mouse_cursor(ui.mouse_cursor()));
+        display
+            .gl_window()
+            .window()
+            .set_cursor(conrod::backend::winit::convert_mouse_cursor(
+                ui.mouse_cursor(),
+            ));
 
         // Render the `Ui` and then display it on the screen.
         if let Some(primitives) = ui.draw_if_changed() {
@@ -420,30 +494,65 @@ fn main() {
     }
 }
 
-fn edit_ref_frequency(ui: &mut conrod::UiCell, ids: &Ids, text: &mut String) {
-            const BOTTOM_PAD: conrod::Scalar = 250.0;
-            const LEFT_PAD: conrod::Scalar = 250.0;
+fn freq_show(ui: &mut conrod::UiCell, ids: &Ids, text: String) -> Option<f64> {
+    let mut res = None;
 
-            for edit in &widget::TextEdit::new(text)
-                .bottom_left_with_margins_on(
-                    ids.tab_frequency_calibration,
-                    BOTTOM_PAD,
-                    LEFT_PAD,
-                )
-                .color(color::BLACK)
-                .font_size(38)
-                .line_spacing(2.0)
-                .wrap_by_character()
-                .restrict_to_height(false)           // Let the height grow infinitely and scroll.
-                .set(ids.ref_frequency, ui)
-            {
-                
-                let s = edit.clone();
-                let f = s.parse::<f64>().unwrap();
-                println!("edit {:?}", f);
-                *text = edit.clone();
-
-            }
-
-        
+    for edit in &widget::TextEdit::new(&text)
+        .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0 + 100.0, 380.0)
+        .color(color::BLACK)
+        .font_size(45)
+        .line_spacing(2.0)
+        .w(500.0)
+        .wrap_by_character()
+        .center_justify()
+        .restrict_to_height(false) // Let the height grow infinitely and scroll.
+        .parent(ids.tab_frequency_calibration)
+        .set(ids.ref_frequency, ui)
+    {
+        let s = edit.clone();
+        let f = s.parse::<f64>().unwrap();
+        res = Some(f);
     }
+    res
+}
+
+fn edit_ref_frequency(ui: &mut conrod::UiCell, ids: &Ids, freq: f64) -> f64 {
+    widget::Text::new(&"Reference frequency: ".to_string())
+        .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0 + 100.0, 20.0)
+        .color(conrod::color::BLACK)
+        .font_size(45)
+        .line_spacing(1.0)
+        .set(ids.ref_frequency_1, ui);
+
+    if freq < 1000.0 {
+        mhz_lebel(ui, ids, "Hz".to_string());
+        let r = freq_show(ui, ids, format!("{:.2}", freq));
+        match r {
+            Some(hz) => hz,
+            None => freq,
+        }
+    } else if 1000.0 < freq && freq < 1000_000.0 {
+        mhz_lebel(ui, ids, "kHz".to_string());
+        let r = freq_show(ui, ids, format!("{:.5}", freq / 1000.0));
+        match r {
+            Some(k_hz) => k_hz * 1000.0,
+            None => freq,
+        }
+    } else {
+        mhz_lebel(ui, ids, "MHz".to_string());
+        let r = freq_show(ui, ids, format!("{:.8}", freq / 1000_000.0));
+        match r {
+            Some(m_hz) => m_hz * 1000_000.0,
+            None => freq,
+        }
+    }
+}
+
+fn mhz_lebel(ui: &mut conrod::UiCell, ids: &Ids, text: String) {
+    widget::Text::new(&text)
+        .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0 + 100.0, 800.0)
+        .color(conrod::color::BLACK)
+        .font_size(45)
+        .line_spacing(1.0)
+        .set(ids.ref_frequency_2, ui);
+}

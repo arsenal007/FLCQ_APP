@@ -13,6 +13,16 @@ fn timeout<T: std::fmt::Display>(port: &Box<dyn serialport::SerialPort>, s: &T) 
     }
 }
 
+fn timeout_msg<T: std::fmt::Display>(
+    port: &Box<dyn serialport::SerialPort>,
+    s: &T,
+) -> std::string::String {
+    match port.name() {
+        Some(name) => format!("{}: Timeout port \"{}\"", s, name),
+        None => format!("\"{}\" port name is not avilable", s),
+    }
+}
+
 pub struct Flcq {
     port: Option<Box<dyn serialport::SerialPort>>,
 }
@@ -35,7 +45,7 @@ fn frequency(prescaler: u8, tmr0: u8, overflows_array: [u8; 4]) -> f64 {
 impl Flcq {
     fn new<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(port_name: &T) -> Self {
         let mut settings: serialport::SerialPortSettings = Default::default();
-        settings.timeout = std::time::Duration::from_millis(100000);
+        settings.timeout = std::time::Duration::from_secs(30);
         settings.baud_rate = 57600u32;
         match serialport::open_with_settings(&port_name, &settings) {
             Ok(result) => Flcq { port: Some(result) },
@@ -63,7 +73,7 @@ impl Flcq {
 }
 
 impl Flcq {
-    fn eeprom_write_byte(&mut self, address: &u8, data: &u8) -> () {
+    pub fn eeprom_write_byte(&mut self, address: &u8, data: &u8) -> () {
         match &mut self.port {
             Some(port) => {
                 let write_data = vec![0x03u8, *data, *address, 0xFFu8, 0xFFu8];
@@ -181,94 +191,113 @@ impl Flcq {
 
 //temperature
 impl Flcq {
-    pub fn t(&mut self) -> f64 {
-        let mut res: f64 = -300.0;
+    pub fn t(&mut self) -> (Option<f64>, std::string::String) {
         match &mut self.port {
             Some(port) => {
                 let write_data = vec![0x09u8, 0x08u8, 0x00u8, 0xFFu8, 0xFFu8];
 
                 match port.write(&write_data) {
-                    Ok(_) => (),
-                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
-                        &port,
-                        &std::string::String::from(" [ query for temperature from FLCQ ] "),
-                    ),
-                    Err(e) => eprintln!("{:?}", e),
-                };
-                let mut read_data = vec![0; 5];
-                match port.read(&mut read_data) {
-                    Ok(_n) => {
-                        if read_data[0] == 0x0A && _n == 5 {
-                            res = self.temperature(read_data[1], read_data[2])
+                    Ok(_) => {
+                        let mut read_data = vec![0; 5];
+                        match port.read(&mut read_data) {
+                            Ok(_n) => {
+                                if read_data[0] == 0x0A && _n == 5 {
+                                    (
+                                        Some(self.temperature(read_data[1], read_data[2])),
+                                        "".to_string(),
+                                    )
+                                } else {
+                                    (None, "Answer in Wrong format".to_string())
+                                }
+                            }
+                            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (
+                                None,
+                                timeout_msg(
+                                    &port,
+                                    &std::string::String::from(
+                                        " [ wait for temperature from FLCQ ] ",
+                                    ),
+                                ),
+                            ),
+                            Err(e) => (None, format!("{:?}", e)),
                         }
                     }
-                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
-                        &port,
-                        &std::string::String::from(" [ wait for temperature from FLCQ ] "),
+                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (
+                        None,
+                        timeout_msg(
+                            &port,
+                            &std::string::String::from(" [ query for temperature from FLCQ ] "),
+                        ),
                     ),
-                    Err(e) => eprintln!("{:?}", e),
+                    Err(e) => (None, format!("{:?}", e)),
                 }
-                res
             }
-            None => {
-                eprintln!("this should not be ever called");
-                res
-            }
+            None => (None, "this should not be ever called".to_string()),
         }
     }
 }
 
-impl Flcq {}
-
 impl Flcq {
     // continue frequency
-    pub fn get_frequency_c(&mut self, n: u8) -> f64 {
-        let mut freq: f64 = -10000.0f64;
+    pub fn get_frequency_c(&mut self, count: &u8) -> (Option<f64>, std::string::String) {
+        let n = count.clone();
         match &mut self.port {
             Some(port) => {
                 if (0 < n) && (n < 255) {
                     let write_data = vec![0x0Bu8, 0x10u8, 0x00u8, n, 0xFFu8, 0xFFu8];
                     match port.write(&write_data) {
-                        Ok(_) => (),
-                        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
-                            &port,
-                            &std::string::String::from(" [ query for frequency from FLCQ ] "),
-                        ),
-                        Err(e) => eprintln!("{:?}", e),
-                    };
+                        Ok(_) => {
+                            let mut read_data = vec![0; 9];
 
-                    let mut read_data = vec![0; 9];
-
-                    match port.read(&mut read_data) {
-                        Ok(_n) => {
-                            let n_overflow_tmp =
-                                [read_data[3], read_data[4], read_data[5], read_data[6]];
-                            let overflows: u32;
-                            unsafe {
-                                overflows = std::mem::transmute::<[u8; 4], u32>(n_overflow_tmp);
-                            }
-                            //println!("overflows {}", overflows);
-                            if read_data[0] == 0x06 && _n == 9 {
-                                let n_overflow =
-                                    [read_data[3], read_data[4], read_data[5], read_data[6]];
-                                freq = frequency(read_data[1], read_data[2], n_overflow);
+                            match port.read(&mut read_data) {
+                                Ok(_n) => {
+                                    if read_data[0] == 0x06 && _n == 9 {
+                                        (
+                                            Some(frequency(
+                                                read_data[1],
+                                                read_data[2],
+                                                [
+                                                    read_data[3],
+                                                    read_data[4],
+                                                    read_data[5],
+                                                    read_data[6],
+                                                ],
+                                            )),
+                                            "".to_string(),
+                                        )
+                                    } else {
+                                        (None, "Answer in Wrong format".to_string())
+                                    }
+                                }
+                                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (
+                                    None,
+                                    timeout_msg(
+                                        &port,
+                                        &std::string::String::from(
+                                            " [ wait for temperature from FLCQ ] ",
+                                        ),
+                                    ),
+                                ),
+                                Err(e) => (None, format!("{:?}", e)),
                             }
                         }
-                        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(
-                            &port,
-                            &std::string::String::from(" [ wait for temperature from FLCQ ] "),
+                        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => (
+                            None,
+                            timeout_msg(
+                                &port,
+                                &std::string::String::from(" [ query for frequency from FLCQ ] "),
+                            ),
                         ),
-                        Err(e) => eprintln!("{:?}", e),
+                        Err(e) => (None, format!("{:?}", e)),
                     }
                 } else {
-                    println!("wrong averging over {:?}, must be (0 < n < 255) ", n);
+                    (
+                        None,
+                        format!("wrong averging over {:?}, must be (0 < n < 255) ", n),
+                    )
                 }
-                freq
             }
-            None => {
-                eprintln!("this should not be ever called");
-                freq
-            }
+            None => (None, "this should not be ever called".to_string()),
         }
     }
 }
