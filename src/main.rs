@@ -51,8 +51,6 @@ conrod::widget_ids! {
         freq_calibration_period,
         frequency_measure_button,
         frequency_temperature,
-        frequency_saved_temperature,
-        frequency_delta_temperature,
         inductance_measure_button,
         inductance_cref1_edit,
         inductance_cref1_label,
@@ -61,7 +59,9 @@ conrod::widget_ids! {
         inductance_cref2_edit,
         inductance_cref2_label,
         inductance_cref2_pf,
-        inductance_cref2_toggle
+        inductance_cref2_toggle,
+        inductance_frequency_calibration_temperature,
+        inductance_c,
     }
 }
 
@@ -122,7 +122,6 @@ fn main() {
     let mut c_ref2 = Some(1000.0);
     let mut cref1_active = true;
     let mut cref2_active = false;
-    let mut temperature = (None, "".to_string());
     let mut temperature_cal = (None, "".to_string());
     let mut frequency = (None, "".to_string());
     let mut frequency_cal = (None, "".to_string());
@@ -370,7 +369,6 @@ fn main() {
                 .was_clicked()
             {
                 if flcq.is_init() {
-                    temperature = flcq.t();
                     frequency = flcq.get_frequency_c(&count);
                 }
             }
@@ -456,7 +454,6 @@ fn main() {
                 .was_clicked()
             {
                 if flcq.is_init() {
-                    temperature = flcq.t();
                     let c = flcq.eeprom_read_byte(&0u8); // read N count
                     frequency = flcq.get_frequency_c(&c);
                     periode = flcq.eeprom_read_f64(&9u8);
@@ -483,6 +480,7 @@ fn main() {
                     .set(ids.error_label, ui),
             }
 
+            /*
             match &temperature {
                 (Some(t), _) => {
                     widget::Text::new(&format!("Temperature: {:.2} C", t))
@@ -492,7 +490,7 @@ fn main() {
                         .font_size(45)
                         .line_spacing(3.0)
                         .set(ids.frequency_temperature, ui);
-                    let calibration_temperature = flcq.eeprom_read_f64(&17u8);
+
                     widget::Text::new(&format!(
                         "Calibration Temperature: {:.2} C",
                         calibration_temperature
@@ -502,13 +500,6 @@ fn main() {
                     .font_size(45)
                     .line_spacing(1.0)
                     .set(ids.frequency_saved_temperature, ui);
-
-                    widget::Text::new(&format!("Delta: {:.2} C", t - calibration_temperature))
-                        .bottom_left_with_margins_on(ids.tab_frequency, 100.0, 20.0)
-                        .color(conrod::color::BLACK)
-                        .font_size(45)
-                        .line_spacing(1.0)
-                        .set(ids.frequency_delta_temperature, ui);
                 }
 
                 (None, str) => widget::Text::new(&str)
@@ -518,7 +509,15 @@ fn main() {
                     .font_size(16)
                     .line_spacing(3.0)
                     .set(ids.error_label, ui),
-            }
+            }*/
+
+            temperature(
+                ui,
+                &ids,
+                ids.tab_frequency,
+                ids.frequency_temperature,
+                &mut flcq,
+            );
 
             widget::Text::new("Cref1: ")
                 .top_left_with_margins_on(ids.tab_inductance, 30.0, 70.0)
@@ -561,7 +560,7 @@ fn main() {
                 .set(ids.inductance_cref1_pf, ui);
 
             widget::Text::new("Cref2: ")
-                .top_left_with_margins_on(ids.tab_inductance, 80.0, 70.0)
+                .top_left_with_margins_on(ids.tab_inductance, 100.0, 70.0)
                 .color(conrod::color::BLACK)
                 .font_size(45)
                 .line_spacing(3.0)
@@ -571,7 +570,7 @@ fn main() {
             match c_ref2.clone() {
                 Some(f) => {
                     for edit in &widget::TextEdit::new(&format!("{:.2}", f))
-                        .top_left_with_margins_on(ids.tab_inductance, 80.0, 120.0)
+                        .top_left_with_margins_on(ids.tab_inductance, 100.0, 120.0)
                         .color(color::BLACK)
                         .font_size(45)
                         .line_spacing(3.0)
@@ -593,7 +592,7 @@ fn main() {
             }
 
             widget::Text::new("pF")
-                .top_left_with_margins_on(ids.tab_inductance, 80.0, 430.0)
+                .top_left_with_margins_on(ids.tab_inductance, 100.0, 430.0)
                 .color(conrod::color::BLACK)
                 .font_size(45)
                 .line_spacing(3.0)
@@ -617,7 +616,7 @@ fn main() {
             }
 
             for v in &mut widget::Toggle::new(cref2_active)
-                .top_left_with_margins_on(ids.tab_inductance, 80.0, 10.0)
+                .top_left_with_margins_on(ids.tab_inductance, 100.0, 10.0)
                 .parent(ids.tab_inductance)
                 .enabled(true)
                 .color(conrod::color::GREEN)
@@ -628,7 +627,8 @@ fn main() {
                 cref2_active = v.clone();
             }
 
-            frequency1_l = (Some(1000000.0), "".to_string());
+            frequency1_l = (Some(30_440_000.0), "".to_string());
+            frequency2_l = (Some(11_717_000.0), "".to_string());
 
             let pack = (frequency1_l.clone(), frequency2_l.clone());
 
@@ -685,22 +685,36 @@ fn main() {
                         .set(ids.error_label, ui);
                 }
 
-                ((Some(fa), _), (Some(fb), _)) => {
-                    let mut f1 = 0.0;
-                    let mut f2 = 0.0;
-                    let period = flcq.eeprom_read_f64(&9u8);
-                    let temperature = flcq.t();
-                    if fa < fb {
-                        f1 = fb / period;
-                        f2 = fa / period;
-                    } else {
-                        f1 = fa / period;
-                        f2 = fb / period;
+                ((Some(fa), _), (Some(fb), _)) => match (cref1_active, cref2_active) {
+                    (true, false) => {
+                        if let Some(c_ref) = c_ref1 {
+                            let (c, l) = l1(fa, fb, 1.0, c_ref);
+                            l_tab(ui, &ids, c, l);
+                            temperature(
+                                ui,
+                                &ids,
+                                ids.tab_inductance,
+                                ids.inductance_frequency_calibration_temperature,
+                                &mut flcq,
+                            );
+                        }
                     }
-                    let c_ref = 100.0;
-                    let c = (f2 * f2) / ((f1 * f1) - (f2 * f2)) * c_ref;
-                    let l = 1.0 / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c);
-                }
+                    (false, true) => {
+                        if let Some(c_ref) = c_ref2 {
+                            let (c, l) = l1(fa, fb, flcq.eeprom_read_f64(&9u8), c_ref);
+                            l_tab(ui, &ids, c, l);
+                            temperature(
+                                ui,
+                                &ids,
+                                ids.tab_inductance,
+                                ids.inductance_frequency_calibration_temperature,
+                                &mut flcq,
+                            );
+                        }
+                    }
+                    (true, true) => (),
+                    (false, false) => (),
+                },
             }
 
             /*
@@ -816,6 +830,65 @@ fn main() {
             target.finish().unwrap();
         }
     }
+}
+
+fn l_tab(ui: &mut conrod::UiCell, ids: &Ids, c: f64, l: f64) {
+    let txt = &format!("coil L: {:.2} uH, coil C: {:.2} pF", l, c);
+    widget::Text::new(txt)
+        .top_left_with_margins_on(ids.tab_inductance, 170.0, 30.0)
+        .color(conrod::color::BLACK)
+        .font_size(45)
+        .line_spacing(1.0)
+        .set(ids.inductance_c, ui);
+}
+
+fn temperature(
+    ui: &mut conrod::UiCell,
+    ids: &Ids,
+    tab: conrod::widget::id::Id,
+    id: conrod::widget::id::Id,
+    d: &mut com::Flcq,
+) {
+    //let frequency_calibration_temperature = d.eeprom_read_f64(&17u8);
+    let frequency_calibration_temperature = 25.0;
+    //match d.t() {
+    match (Some(24.0), "".to_string()) {
+        (Some(current_temperature), _) => widget::Text::new(&format!(
+        "current temperature:       {:.2} C,\nfrequency calibration temperature: {:.2} C,\ndifference: {:.2} C",
+        current_temperature,
+        frequency_calibration_temperature,
+        current_temperature - frequency_calibration_temperature
+    ))
+        .bottom_left_with_margins_on(tab, 130.0, 20.0)
+        .color(conrod::color::BLACK)
+        .font_size(35)
+        .line_spacing(4.0)
+        .set(id, ui),
+        (None, str) => widget::Text::new(&str)
+            .color(conrod::color::BLACK)
+            .top_left_with_margins_on(ids.error, 5.0, 5.0)
+            .right_justify()
+            .font_size(16)
+            .line_spacing(3.0)
+            .set(ids.error_label, ui),
+    }
+}
+
+fn l1(fa: f64, fb: f64, period: f64, c_ref: f64) -> (f64, f64) {
+    let mut f1 = 0.0;
+    let mut f2 = 0.0;
+    if fa < fb {
+        f1 = fb / period;
+        f2 = fa / period;
+    } else {
+        f1 = fa / period;
+        f2 = fb / period;
+    }
+    let c = (f2 * f2) / ((f1 * f1) - (f2 * f2)) * c_ref;
+
+    let l = 1.0
+        / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c / 1000_000_000_000.0);
+    (c, l * 1000_000.0)
 }
 
 fn freq_show(ui: &mut conrod::UiCell, ids: &Ids, text: String) -> Option<f64> {

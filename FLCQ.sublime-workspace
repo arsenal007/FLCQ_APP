@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"la",
+				"label_font_size"
+			],
+			[
+				"label",
+				"label_color"
+			],
+			[
+				"N",
+				"None"
+			],
+			[
+				"cre",
+				"c_ref"
+			],
+			[
 				"frequency1_",
 				"frequency1_L"
 			],
@@ -27,7 +43,7 @@
 			"file": "src/main.rs",
 			"settings":
 			{
-				"buffer_size": 27858,
+				"buffer_size": 34392,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -282,7 +298,7 @@
 	],
 	"find":
 	{
-		"height": 29.0
+		"height": 41.0
 	},
 	"find_in_files":
 	{
@@ -296,6 +312,12 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"format",
+			"edit_ref",
+			"inductance_cref1_label",
+			"inductance_cref1_label\n",
+			"freq_show",
+			"ref_frequency",
 			"frequency_la",
 			"label_frequency",
 			"ref_frequency",
@@ -356,15 +378,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 27858,
+						"buffer_size": 34392,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								17991,
-								17991
+								23879,
+								23879
 							]
 						],
 						"settings":
@@ -374,7 +396,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 9166.0,
+						"translation.y": 12651.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -502,7 +524,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 159.0
+		"height": 202.0
 	},
 	"output.find_results":
 	{
