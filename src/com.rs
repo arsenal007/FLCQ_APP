@@ -110,7 +110,7 @@ impl Flcq {
 }
 
 impl Flcq {
-    fn eeprom_read_byte(&mut self, adrress: &u8) -> u8 {
+    pub fn eeprom_read_byte(&mut self, adrress: &u8) -> u8 {
         match &mut self.port {
             Some(port) => {
                 let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];

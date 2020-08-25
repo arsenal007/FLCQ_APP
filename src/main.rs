@@ -9,7 +9,7 @@ extern crate conrod;
 
 use clap::{App, AppSettings, Arg};
 use conrod::backend::glium::glium::{self, Surface};
-use conrod::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget};
+use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
 mod com;
 
 conrod::widget_ids! {
@@ -32,6 +32,8 @@ conrod::widget_ids! {
         tab_frequency,
         tab_frequency_calibration,
         tab_capacity,
+        tab_inductance,
+        tab_crystal,
         label_frequency,
         label_frequency_calibration,
         label_capacity,
@@ -47,8 +49,19 @@ conrod::widget_ids! {
         freq_calibration_save_button,
         freq_calibration_temperature,
         freq_calibration_period,
-
-
+        frequency_measure_button,
+        frequency_temperature,
+        frequency_saved_temperature,
+        frequency_delta_temperature,
+        inductance_measure_button,
+        inductance_cref1_edit,
+        inductance_cref1_label,
+        inductance_cref1_pf,
+        inductance_cref1_toggle,
+        inductance_cref2_edit,
+        inductance_cref2_label,
+        inductance_cref2_pf,
+        inductance_cref2_toggle
     }
 }
 
@@ -69,8 +82,8 @@ fn main() {
     //println!(        "measurments period {:?}sec, calibration temperature {}, current temperature {}",        period,        t,        _flcq.get_temperature()    );
     //println!("frequency {:?}Hz", _flcq.get_frequency_c(254u8) / period);
 
-    const WIDTH: u32 = 500;
-    const HEIGHT: u32 = 520;
+    const WIDTH: u32 = 600;
+    const HEIGHT: u32 = 480;
 
     let mut events_loop = glium::glutin::EventsLoop::new();
     let window = glium::glutin::WindowBuilder::new().with_title("FLCQ");
@@ -104,9 +117,18 @@ fn main() {
     let frequency_count_intervals = (1.0, 254.0);
 
     let mut count: u8 = 254u8;
-    let mut ref_frequency = 1000000.0;
+    let mut f_ref = None;
+    let mut c_ref1 = Some(1000.0);
+    let mut c_ref2 = Some(1000.0);
+    let mut cref1_active = true;
+    let mut cref2_active = false;
     let mut temperature = (None, "".to_string());
+    let mut temperature_cal = (None, "".to_string());
     let mut frequency = (None, "".to_string());
+    let mut frequency_cal = (None, "".to_string());
+    let mut frequency1_l = (None, "".to_string());
+    let mut frequency2_l = (None, "".to_string());
+    let mut periode = 1.0;
 
     'render: loop {
         // Handle all events.
@@ -180,8 +202,10 @@ fn main() {
 
             conrod::widget::Tabs::new(&[
                 (ids.tab_frequency, "FREQUENCY"),
-                (ids.tab_frequency_calibration, "FREQUENCY CALIBRATION"),
-                (ids.tab_capacity, "capacity measurments"),
+                (ids.tab_frequency_calibration, "F CALIBRATION"),
+                (ids.tab_inductance, "L MEASURMENTS"),
+                (ids.tab_capacity, "C MEASURMENTS"),
+                (ids.tab_crystal, "Q MEASURMENTS"),
             ])
             .h_of(ids.top)
             .parent(ids.top)
@@ -300,8 +324,40 @@ fn main() {
                 .parent(ids.tab_frequency_calibration)
                 .set(ids.count_label_approx_in_sec, ui);
 
-            let f = ref_frequency;
-            ref_frequency = edit_ref_frequency(ui, &ids, f);
+            widget::Text::new(&"Reference frequency: ".to_string())
+                .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0 + 100.0, 20.0)
+                .color(conrod::color::BLACK)
+                .font_size(45)
+                .line_spacing(1.0)
+                .set(ids.ref_frequency_1, ui);
+
+            match f_ref.clone() {
+                Some(f) => {
+                    if f < 1000.0 {
+                        mhz_lebel(ui, &ids, "Hz".to_string());
+                        let r = freq_show(ui, &ids, format!("{:.2}", f));
+                        match r {
+                            Some(hz) => f_ref = Some(hz),
+                            None => (),
+                        }
+                    } else if 1000.0 < f && f < 1000_000.0 {
+                        mhz_lebel(ui, &ids, "kHz".to_string());
+                        let r = freq_show(ui, &ids, format!("{:.5}", f / 1000.0));
+                        match r {
+                            Some(k_hz) => f_ref = Some(k_hz * 1000.0),
+                            None => (),
+                        }
+                    } else {
+                        mhz_lebel(ui, &ids, "MHz".to_string());
+                        let r = freq_show(ui, &ids, format!("{:.8}", f / 1000_000.0));
+                        match r {
+                            Some(m_hz) => f_ref = Some(m_hz * 1000_000.0),
+                            None => (),
+                        }
+                    }
+                }
+                None => f_ref = Some(1000000.0),
+            }
 
             if widget::Button::new()
                 .w_h(250.0, 100.0)
@@ -332,19 +388,28 @@ fn main() {
             {
                 if flcq.is_init() {
                     flcq.eeprom_write_byte(&0u8, &count); // save N count
-                    match &frequency {
-                        (Some(f), _) => flcq.eeprom_write_f64(&1u8, &f),
+                    match &frequency_cal {
+                        (Some(f), _) => {
+                            flcq.eeprom_write_f64(&1u8, &f);
+                            match f_ref {
+                                Some(ref_frequency) => {
+                                    let periode = f / ref_frequency;
+                                    flcq.eeprom_write_f64(&9u8, &periode);
+                                }
+                                None => (),
+                            }
+                        }
                         (None, _) => (),
                     }
-                    match &temperature {
-                        (Some(t), _) => flcq.eeprom_write_f64(&9u8, &t),
+                    match &temperature_cal {
+                        (Some(t), _) => flcq.eeprom_write_f64(&17u8, &t),
                         (None, _) => (),
                     }
                 }
             }
 
-            match &frequency {
-                (Some(f), _) => {
+            match (&frequency_cal, &f_ref) {
+                ((Some(f), _), Some(ref_frequency)) => {
                     widget::Text::new(&format!("Mesured Period: {:.5} Sec", f / ref_frequency))
                         .bottom_left_with_margins_on(ids.tab_frequency_calibration, 480.0, 20.0)
                         .color(conrod::color::BLACK)
@@ -353,16 +418,17 @@ fn main() {
                         .line_spacing(3.0)
                         .set(ids.freq_calibration_period, ui);
                 }
-                (None, str) => widget::Text::new(&str)
+                ((None, str), _) => widget::Text::new(&str)
                     .color(conrod::color::BLACK)
                     .top_left_with_margins_on(ids.error, 5.0, 5.0)
                     .right_justify()
                     .font_size(16)
                     .line_spacing(3.0)
                     .set(ids.error_label, ui),
+                ((Some(_), _), None) => (),
             }
 
-            match &temperature {
+            match &temperature_cal {
                 (Some(t), _) => widget::Text::new(&format!("Temperature: {:.2} C", t))
                     .bottom_left_with_margins_on(ids.tab_frequency_calibration, 480.0 - 120.0, 20.0)
                     .color(conrod::color::BLACK)
@@ -377,6 +443,264 @@ fn main() {
                     .font_size(16)
                     .line_spacing(3.0)
                     .set(ids.error_label, ui),
+            }
+
+            if widget::Button::new()
+                .w_h(250.0, 100.0)
+                .bottom_left_with_margins_on(ids.tab_frequency, 450.0, 750.0)
+                .label_font_size(50)
+                .enabled(flcq.is_init())
+                .label("Measure")
+                .parent(ids.tab_frequency)
+                .set(ids.frequency_measure_button, ui)
+                .was_clicked()
+            {
+                if flcq.is_init() {
+                    temperature = flcq.t();
+                    let c = flcq.eeprom_read_byte(&0u8); // read N count
+                    frequency = flcq.get_frequency_c(&c);
+                    periode = flcq.eeprom_read_f64(&9u8);
+                }
+            }
+
+            match &frequency {
+                (Some(f), _) => {
+                    let frequency = f / periode;
+                    widget::Text::new(&format!("FREQ: {:.2} Hz", frequency))
+                        .bottom_left_with_margins_on(ids.tab_frequency, 480.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .right_justify()
+                        .font_size(45)
+                        .line_spacing(3.0)
+                        .set(ids.label_frequency, ui);
+                }
+                (None, str) => widget::Text::new(&str)
+                    .color(conrod::color::BLACK)
+                    .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                    .right_justify()
+                    .font_size(16)
+                    .line_spacing(3.0)
+                    .set(ids.error_label, ui),
+            }
+
+            match &temperature {
+                (Some(t), _) => {
+                    widget::Text::new(&format!("Temperature: {:.2} C", t))
+                        .bottom_left_with_margins_on(ids.tab_frequency, 300.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .right_justify()
+                        .font_size(45)
+                        .line_spacing(3.0)
+                        .set(ids.frequency_temperature, ui);
+                    let calibration_temperature = flcq.eeprom_read_f64(&17u8);
+                    widget::Text::new(&format!(
+                        "Calibration Temperature: {:.2} C",
+                        calibration_temperature
+                    ))
+                    .bottom_left_with_margins_on(ids.tab_frequency, 200.0, 20.0)
+                    .color(conrod::color::BLACK)
+                    .font_size(45)
+                    .line_spacing(1.0)
+                    .set(ids.frequency_saved_temperature, ui);
+
+                    widget::Text::new(&format!("Delta: {:.2} C", t - calibration_temperature))
+                        .bottom_left_with_margins_on(ids.tab_frequency, 100.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .font_size(45)
+                        .line_spacing(1.0)
+                        .set(ids.frequency_delta_temperature, ui);
+                }
+
+                (None, str) => widget::Text::new(&str)
+                    .color(conrod::color::BLACK)
+                    .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                    .right_justify()
+                    .font_size(16)
+                    .line_spacing(3.0)
+                    .set(ids.error_label, ui),
+            }
+
+            widget::Text::new("Cref1: ")
+                .top_left_with_margins_on(ids.tab_inductance, 30.0, 70.0)
+                .color(conrod::color::BLACK)
+                .font_size(45)
+                .line_spacing(3.0)
+                .parent(ids.tab_inductance)
+                .set(ids.inductance_cref1_label, ui);
+
+            match c_ref1.clone() {
+                Some(f) => {
+                    for edit in &widget::TextEdit::new(&format!("{:.2}", f))
+                        .top_left_with_margins_on(ids.tab_inductance, 30.0, 120.0)
+                        .color(color::BLACK)
+                        .font_size(45)
+                        .line_spacing(3.0)
+                        .w(300.0)
+                        .wrap_by_character()
+                        .right_justify()
+                        .restrict_to_height(false) // Let the height grow infinitely and scroll.
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_cref1_edit, ui)
+                    {
+                        let s = edit.clone();
+                        let f = s.parse::<f64>().unwrap();
+                        if 9.0 < f && f < 10000.99 {
+                            c_ref1 = Some(f);
+                        }
+                    }
+                }
+                None => c_ref1 = Some(1000.0),
+            }
+
+            widget::Text::new("pF")
+                .top_left_with_margins_on(ids.tab_inductance, 30.0, 430.0)
+                .color(conrod::color::BLACK)
+                .font_size(45)
+                .line_spacing(3.0)
+                .parent(ids.tab_inductance)
+                .set(ids.inductance_cref1_pf, ui);
+
+            widget::Text::new("Cref2: ")
+                .top_left_with_margins_on(ids.tab_inductance, 80.0, 70.0)
+                .color(conrod::color::BLACK)
+                .font_size(45)
+                .line_spacing(3.0)
+                .parent(ids.tab_inductance)
+                .set(ids.inductance_cref2_label, ui);
+
+            match c_ref2.clone() {
+                Some(f) => {
+                    for edit in &widget::TextEdit::new(&format!("{:.2}", f))
+                        .top_left_with_margins_on(ids.tab_inductance, 80.0, 120.0)
+                        .color(color::BLACK)
+                        .font_size(45)
+                        .line_spacing(3.0)
+                        .w(300.0)
+                        .wrap_by_character()
+                        .right_justify()
+                        .restrict_to_height(false) // Let the height grow infinitely and scroll.
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_cref2_edit, ui)
+                    {
+                        let s = edit.clone();
+                        let f = s.parse::<f64>().unwrap();
+                        if 9.0 < f && f < 10000.99 {
+                            c_ref2 = Some(f);
+                        }
+                    }
+                }
+                None => c_ref2 = Some(1000.0),
+            }
+
+            widget::Text::new("pF")
+                .top_left_with_margins_on(ids.tab_inductance, 80.0, 430.0)
+                .color(conrod::color::BLACK)
+                .font_size(45)
+                .line_spacing(3.0)
+                .parent(ids.tab_inductance)
+                .set(ids.inductance_cref2_pf, ui);
+
+            if let (false, false) = (cref1_active, cref2_active) {
+                cref1_active = true
+            }
+
+            for v in &mut widget::Toggle::new(cref1_active)
+                .top_left_with_margins_on(ids.tab_inductance, 30.0, 10.0)
+                .parent(ids.tab_inductance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .set(ids.inductance_cref1_toggle, ui)
+            {
+                cref1_active = v.clone();
+            }
+
+            for v in &mut widget::Toggle::new(cref2_active)
+                .top_left_with_margins_on(ids.tab_inductance, 80.0, 10.0)
+                .parent(ids.tab_inductance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .set(ids.inductance_cref2_toggle, ui)
+            {
+                cref2_active = v.clone();
+            }
+
+            frequency1_l = (Some(1000000.0), "".to_string());
+
+            let pack = (frequency1_l.clone(), frequency2_l.clone());
+
+            match pack {
+                ((None, str), _) => {
+                    if widget::Button::new()
+                        .w_h(250.0, 100.0)
+                        .bottom_left_with_margins_on(ids.tab_inductance, 450.0, 750.0)
+                        .label_font_size(50)
+                        .enabled(flcq.is_init())
+                        .label("F1")
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_measure_button, ui)
+                        .was_clicked()
+                    {
+                        if flcq.is_init() {
+                            let c = flcq.eeprom_read_byte(&0u8); // read N count
+                            frequency1_l = flcq.get_frequency_c(&c);
+                        }
+                    };
+
+                    widget::Text::new(&str)
+                        .color(conrod::color::BLACK)
+                        .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                        .right_justify()
+                        .font_size(16)
+                        .line_spacing(3.0)
+                        .set(ids.error_label, ui);
+                }
+                ((Some(_f1), _), (None, str)) => {
+                    if widget::Button::new()
+                        .w_h(250.0, 100.0)
+                        .bottom_left_with_margins_on(ids.tab_inductance, 450.0, 750.0)
+                        .label_font_size(50)
+                        .enabled(flcq.is_init())
+                        .label("F2")
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_measure_button, ui)
+                        .was_clicked()
+                    {
+                        if flcq.is_init() {
+                            let c = flcq.eeprom_read_byte(&0u8); // read N count
+
+                            frequency2_l = flcq.get_frequency_c(&c);
+                        }
+                    };
+
+                    widget::Text::new(&str)
+                        .color(conrod::color::BLACK)
+                        .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                        .right_justify()
+                        .font_size(16)
+                        .line_spacing(3.0)
+                        .set(ids.error_label, ui);
+                }
+
+                ((Some(fa), _), (Some(fb), _)) => {
+                    let mut f1 = 0.0;
+                    let mut f2 = 0.0;
+                    let period = flcq.eeprom_read_f64(&9u8);
+                    let temperature = flcq.t();
+                    if fa < fb {
+                        f1 = fb / period;
+                        f2 = fa / period;
+                    } else {
+                        f1 = fa / period;
+                        f2 = fb / period;
+                    }
+                    let c_ref = 100.0;
+                    let c = (f2 * f2) / ((f1 * f1) - (f2 * f2)) * c_ref;
+                    let l = 1.0 / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c);
+                }
             }
 
             /*
