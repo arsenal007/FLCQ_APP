@@ -833,7 +833,7 @@ fn main() {
 }
 
 fn l_tab(ui: &mut conrod::UiCell, ids: &Ids, c: f64, l: f64) {
-    let txt = &format!("coil L: {:.2} uH, coil C: {:.2} pF", l, c);
+    let txt = &format!("coil L: {:.2} nH, coil C: {:.2} pF", l, c);
     widget::Text::new(txt)
         .top_left_with_margins_on(ids.tab_inductance, 170.0, 30.0)
         .color(conrod::color::BLACK)
@@ -886,9 +886,45 @@ fn l1(fa: f64, fb: f64, period: f64, c_ref: f64) -> (f64, f64) {
     }
     let c = (f2 * f2) / ((f1 * f1) - (f2 * f2)) * c_ref;
 
-    let l = 1.0
-        / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c / 1000_000_000_000.0);
-    (c, l * 1000_000.0)
+    let c_farad = c / 1000_000_000_000.0;
+    let l = 1.0 / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c_farad);
+    (c, l * 1000_000_000.0)
+}
+
+fn l2(f1_: f64, f2_: f64, period: f64, c1_: f64, c2_: f64) -> (f64, f64) {
+    let f1;
+    let f2;
+
+    if f1_ < f2_ {
+        f1 = f1_ / period;
+        f2 = f2_ / period;
+    } else {
+        f1 = f2_ / period;
+        f2 = f1_ / period;
+    }
+
+    let c1;
+    let c2;
+
+    if c1_ > c2_ {
+        c1 = c1_;
+        c2 = c2_;
+    } else {
+        c1 = c2_;
+        c2 = c1_; // in pico farad
+    }
+
+    let f1_2 = f1 * f1;
+    let f2_2 = f2 * f2;
+    let c = (f1_2 * c1 - f2_2 * c2) / (f2_2 - f1_2);
+
+    let c1f = c1 / 1000_000_000_000.0; // in farad
+    let c2f = c2 / 1000_000_000_000.0;
+
+    let l = (1.0 / f1_2 - 1.0 / f2_2)
+        / (4.0 * std::f64::consts::PI * std::f64::consts::PI * (c1f - c2f)); // in Henry
+
+    (c, l * 1000_000_000.0) // return in pico farads and micro Henrys
 }
 
 fn freq_show(ui: &mut conrod::UiCell, ids: &Ids, text: String) -> Option<f64> {
