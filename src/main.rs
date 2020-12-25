@@ -31,12 +31,26 @@ conrod::widget_ids! {
         refresh,
         tab_frequency,
         tab_frequency_calibration,
-        tab_capacity,
+        tab_capacitance,
+        capacitance_cref1_label,
+        capacitance_cref1_edit,
+        capacitance_cref1_pf,
+        capacitance_cref1_toggle,
+        capacitance_cref2_edit,
+        capacitance_cref2_label,
+        capacitance_cref2_pf,
+        capacitance_cref2_toggle,
+        capacitance_input_label,
+        capacitance_eeprom_label,
+        capacitance_input_l_label,
+        capacitance_eeprom_l_label,
+        capacitance_lref1_toggle,
+        capacitance_lref2_toggle,
+        capacitance_eeprom_lc_label,
         tab_inductance,
         tab_crystal,
         label_frequency,
         label_frequency_calibration,
-        label_capacity,
         tabs,
         count_frequency_slider,
         count_label_info,
@@ -66,8 +80,17 @@ conrod::widget_ids! {
         inductance_f2_label,
         inductance_l_label,
         inductance_c_label,
+        inductance_results_label,
+        inductance_save_button,
+        inductance_reset_button,
+        inductance_current_temperature_f1_label,
         inductance_frequency_calibration_temperature,
-        inductance_c,
+        inductance_frequency_calibration_temperature_f1_label,
+        inductance_frequency_delta_temperature_f1_label,
+        inductance_current_temperature_f2_label,
+        inductance_frequency_calibration_temperature_f2_label,
+        inductance_frequency_delta_temperature_f2_label,
+
     }
 }
 
@@ -132,10 +155,13 @@ fn main() {
     let mut c_ref2 = Some(1000.0);
     let mut cref_input_active = true;
     let mut cref_eeprom_active = false;
+    let mut lref_input_active = true;
+    let mut lref_eeprom_active = false;
     let mut fc = (254u8, (None, "".to_string()), (None, "".to_string()));
     let mut frequency = (None, "".to_string());
     let mut frequency1_l = (None, "".to_string());
     let mut frequency2_l = (None, "".to_string());
+    let mut eeprom_lc = None;
 
     'render: loop {
         // Handle all events.
@@ -211,7 +237,7 @@ fn main() {
                 (ids.tab_frequency, "FREQUENCY"),
                 (ids.tab_frequency_calibration, "F CALIBRATION"),
                 (ids.tab_inductance, "L MEASURMENTS"),
-                (ids.tab_capacity, "C MEASURMENTS"),
+                (ids.tab_capacitance, "C MEASURMENTS"),
                 (ids.tab_crystal, "Q MEASURMENTS"),
             ])
             .h_of(ids.top)
@@ -526,10 +552,13 @@ fn main() {
                     .set(ids.error_label, ui),
             }*/
 
+            // ====================================================================================
+            // tab inductance
+            // ====================================================================================
             widget::Text::new("Cref1: ")
-                .top_left_with_margins_on(ids.tab_inductance, 100.0, 40.0)
+                .top_left_with_margins_on(ids.tab_inductance, 70.0, 40.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_cref1_label, ui);
@@ -537,9 +566,9 @@ fn main() {
             match c_ref1.clone() {
                 Some(f) => {
                     for edit in &widget::TextEdit::new(&format!("{:.2}", f))
-                        .top_left_with_margins_on(ids.tab_inductance, 100.0, 50.0)
+                        .top_left_with_margins_on(ids.tab_inductance, 70.0, 50.0)
                         .color(color::BLACK)
-                        .font_size(35)
+                        .font_size(25)
                         .line_spacing(3.0)
                         .w(250.0)
                         .wrap_by_character()
@@ -559,17 +588,17 @@ fn main() {
             }
 
             widget::Text::new("pF")
-                .top_left_with_margins_on(ids.tab_inductance, 100.0, 310.0)
+                .top_left_with_margins_on(ids.tab_inductance, 70.0, 310.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_cref1_pf, ui);
 
             widget::Text::new("Cref2: ")
-                .top_left_with_margins_on(ids.tab_inductance, 150.0, 40.0)
+                .top_left_with_margins_on(ids.tab_inductance, 100.0, 40.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_cref2_label, ui);
@@ -577,9 +606,9 @@ fn main() {
             match c_ref2.clone() {
                 Some(f) => {
                     for edit in &widget::TextEdit::new(&format!("{:.2}", f))
-                        .top_left_with_margins_on(ids.tab_inductance, 150.0, 50.0)
+                        .top_left_with_margins_on(ids.tab_inductance, 100.0, 50.0)
                         .color(color::BLACK)
-                        .font_size(35)
+                        .font_size(25)
                         .line_spacing(3.0)
                         .w(250.0)
                         .wrap_by_character()
@@ -599,9 +628,9 @@ fn main() {
             }
 
             widget::Text::new("pF")
-                .top_left_with_margins_on(ids.tab_inductance, 150.0, 310.0)
+                .top_left_with_margins_on(ids.tab_inductance, 100.0, 310.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_cref2_pf, ui);
@@ -620,6 +649,7 @@ fn main() {
                 .color(conrod::color::GREEN)
                 .border(4.0)
                 .border_color(conrod::color::RED)
+                .w(30.0)
                 .set(ids.inductance_cref1_toggle, ui)
             {
                 let n = v.clone();
@@ -633,12 +663,13 @@ fn main() {
             }
 
             for v in &mut widget::Toggle::new(cref_eeprom_active)
-                .top_left_with_margins_on(ids.tab_inductance, 30.0, 400.0)
+                .top_left_with_margins_on(ids.tab_inductance, 30.0, 550.0)
                 .parent(ids.tab_inductance)
                 .enabled(true)
                 .color(conrod::color::GREEN)
                 .border(4.0)
                 .border_color(conrod::color::RED)
+                .w(30.0)
                 .set(ids.inductance_cref2_toggle, ui)
             {
                 let n = v.clone();
@@ -651,25 +682,23 @@ fn main() {
                 }
             }
 
-            widget::Text::new("Input [edit]: ")
+            widget::Text::new("Input C [edit]: ")
                 .top_left_with_margins_on(ids.tab_inductance, 30.0, 70.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_input_label, ui);
 
-            widget::Text::new("Saved [EEPROM]: ")
-                .top_left_with_margins_on(ids.tab_inductance, 30.0, 460.0)
+            widget::Text::new("Saved C [EEPROM]: ")
+                .top_left_with_margins_on(ids.tab_inductance, 30.0, 610.0)
                 .color(conrod::color::BLACK)
-                .font_size(35)
+                .font_size(25)
                 .line_spacing(3.0)
                 .parent(ids.tab_inductance)
                 .set(ids.inductance_eeprom_label, ui);
 
-            let pack = (frequency1_l.clone(), frequency2_l.clone());
-
-            match pack {
+            match (frequency1_l.clone(), frequency2_l.clone()) {
                 ((None, str), _) => {
                     if widget::Button::new()
                         .w_h(250.0 * 0.8, 100.0 * 0.8)
@@ -681,9 +710,7 @@ fn main() {
                         .set(ids.inductance_measure_button, ui)
                         .was_clicked()
                     {
-                        if flcq.is_init() {
-                            frequency1_l = frequency_pack(&mut flcq);
-                        }
+                        frequency1_l = frequency_pack(&mut flcq);
                     };
 
                     widget::Text::new(&str)
@@ -711,14 +738,51 @@ fn main() {
                         }
                     };
 
-                    let (f, p, _t) = f1;
+                    let (f, p, t) = f1;
+
                     widget::Text::new(&format!("F1: {:.2} Hz", f / p))
-                        .top_left_with_margins_on(ids.tab_inductance, 220.0, 20.0)
+                        .top_left_with_margins_on(ids.tab_inductance, 150.0, 20.0)
                         .color(conrod::color::BLACK)
-                        .font_size(35)
+                        .font_size(25)
                         .line_spacing(3.0)
                         .parent(ids.tab_inductance)
                         .set(ids.inductance_f1_label, ui);
+
+                    let (current, calibration_temperature) = t;
+                    if let (Some(t98), _) = current {
+                        widget::Text::new(&format!("current temperature: {:.2} C", t98))
+                            .top_left_with_margins_on(ids.tab_inductance, 180.0, 20.0)
+                            .color(conrod::color::BLACK)
+                            .font_size(25)
+                            .line_spacing(3.0)
+                            .parent(ids.tab_inductance)
+                            .set(ids.inductance_current_temperature_f1_label, ui);
+
+                        widget::Text::new(&format!(
+                            "calibration temperature: {:.2} C",
+                            calibration_temperature
+                        ))
+                        .top_left_with_margins_on(ids.tab_inductance, 210.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .font_size(25)
+                        .line_spacing(3.0)
+                        .parent(ids.tab_inductance)
+                        .set(
+                            ids.inductance_frequency_calibration_temperature_f1_label,
+                            ui,
+                        );
+
+                        widget::Text::new(&format!(
+                            "delta: {:.2} C",
+                            t98 - calibration_temperature
+                        ))
+                        .top_left_with_margins_on(ids.tab_inductance, 240.0, 20.0)
+                        .color(conrod::color::BLACK)
+                        .font_size(25)
+                        .line_spacing(3.0)
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_frequency_delta_temperature_f1_label, ui);
+                    }
 
                     widget::Text::new(&str)
                         .color(conrod::color::BLACK)
@@ -733,8 +797,8 @@ fn main() {
                     match (cref_input_active, cref_eeprom_active) {
                         (true, false) => {
                             if let (Some(c1), Some(c2)) = (c_ref1.clone(), c_ref2.clone()) {
-                                let (f1_, p1_, _t1) = f1;
-                                let (f2_, p2_, _t2) = f2;
+                                let (f1_, p1_, t1) = f1;
+                                let (f2_, p2_, t2) = f2;
 
                                 let f1__;
                                 let f2__;
@@ -745,25 +809,9 @@ fn main() {
                                 } else {
                                     f1__ = f2_ / p2_;
                                     f2__ = f1_ / p1_;
-                                    frequency1_l = (Some((f2_, p2_, _t1)), str1);
-                                    frequency2_l = (Some((f1_, p1_, _t2)), str2);
+                                    frequency1_l = (Some((f2_, p2_, t1.clone())), str1);
+                                    frequency2_l = (Some((f1_, p1_, t2.clone())), str2);
                                 }
-
-                                widget::Text::new(&format!("F1: {:.2} Hz", f1__))
-                                    .top_left_with_margins_on(ids.tab_inductance, 220.0, 20.0)
-                                    .color(conrod::color::BLACK)
-                                    .font_size(35)
-                                    .line_spacing(3.0)
-                                    .parent(ids.tab_inductance)
-                                    .set(ids.inductance_f1_label, ui);
-
-                                widget::Text::new(&format!("F2: {:.2} Hz", f2__))
-                                    .top_left_with_margins_on(ids.tab_inductance, 220.0, 420.0)
-                                    .color(conrod::color::BLACK)
-                                    .font_size(35)
-                                    .line_spacing(3.0)
-                                    .parent(ids.tab_inductance)
-                                    .set(ids.inductance_f2_label, ui);
 
                                 let c1__;
                                 let c2__;
@@ -775,10 +823,113 @@ fn main() {
                                     c1__ = c2;
                                     c2__ = c1; // in pico farad
                                 }
-                                let (c, l) = l2(f1__, f2__, c1__, c2__);
+
+                                let (c, l) = calc_l(f1__, f2__, c1__, c2__);
+
+                                widget::Text::new(&format!("F1: {:.2} Hz", f1__))
+                                    .top_left_with_margins_on(ids.tab_inductance, 150.0, 20.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_f1_label, ui);
+
+                                let (current1, calibration_temperature1) = t1;
+                                if let (Some(t98), _) = current1 {
+                                    widget::Text::new(&format!(
+                                        "current temperature: {:.2} C",
+                                        t98
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 180.0, 20.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_current_temperature_f1_label, ui);
+
+                                    widget::Text::new(&format!(
+                                        "calibration temperature: {:.2} C",
+                                        calibration_temperature1
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 210.0, 20.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(
+                                        ids.inductance_frequency_calibration_temperature_f1_label,
+                                        ui,
+                                    );
+
+                                    widget::Text::new(&format!(
+                                        "delta: {:.2} C",
+                                        t98 - calibration_temperature1
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 240.0, 20.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_frequency_delta_temperature_f1_label, ui);
+                                }
+
+                                widget::Text::new(&format!("F2: {:.2} Hz", f2__))
+                                    .top_left_with_margins_on(ids.tab_inductance, 150.0, 560.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_f2_label, ui);
+
+                                let (current2, calibration_temperature2) = t2;
+                                if let (Some(t99), _) = current2 {
+                                    widget::Text::new(&format!(
+                                        "current temperature: {:.2} C",
+                                        t99
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 180.0, 560.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_current_temperature_f2_label, ui);
+
+                                    widget::Text::new(&format!(
+                                        "calibration temperature: {:.2} C",
+                                        calibration_temperature2
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 210.0, 560.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(
+                                        ids.inductance_frequency_calibration_temperature_f2_label,
+                                        ui,
+                                    );
+
+                                    widget::Text::new(&format!(
+                                        "delta: {:.2} C",
+                                        t99 - calibration_temperature2
+                                    ))
+                                    .top_left_with_margins_on(ids.tab_inductance, 240.0, 560.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_frequency_delta_temperature_f2_label, ui);
+                                }
+
+                                widget::Text::new("Results: ")
+                                    .top_left_with_margins_on(ids.tab_inductance, 320.0, 70.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(25)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_inductance)
+                                    .set(ids.inductance_results_label, ui);
 
                                 widget::Text::new(&format!("L: {:.2} uH", l))
-                                    .top_left_with_margins_on(ids.tab_inductance, 270.0, 20.0)
+                                    .top_left_with_margins_on(ids.tab_inductance, 370.0, 20.0)
                                     .color(conrod::color::BLACK)
                                     .font_size(35)
                                     .line_spacing(3.0)
@@ -786,18 +937,309 @@ fn main() {
                                     .set(ids.inductance_l_label, ui);
 
                                 widget::Text::new(&format!("C: {:.2} pF", c))
-                                    .top_left_with_margins_on(ids.tab_inductance, 270.0, 420.0)
+                                    .top_left_with_margins_on(ids.tab_inductance, 370.0, 420.0)
                                     .color(conrod::color::BLACK)
                                     .font_size(35)
                                     .line_spacing(3.0)
                                     .parent(ids.tab_inductance)
                                     .set(ids.inductance_c_label, ui);
+
+                                if widget::Button::new()
+                                    .top_left_with_margins_on(ids.tab_inductance, 420.0, 70.0)
+                                    .h(30.0)
+                                    .w(350.0)
+                                    .label("RESET")
+                                    .label_font_size(25)
+                                    .color(conrod::color::LIGHT_RED)
+                                    .set(ids.inductance_reset_button, ui)
+                                    .was_clicked()
+                                {
+                                    frequency1_l = (None, "".to_string());
+                                    frequency2_l = (None, "".to_string());
+                                }
+
+                                if widget::Button::new()
+                                    .top_left_with_margins_on(ids.tab_inductance, 420.0, 510.0)
+                                    .h(30.0)
+                                    .w(350.0)
+                                    .label("Save to EEPROM")
+                                    .label_font_size(25)
+                                    .color(conrod::color::LIGHT_BLUE)
+                                    .set(ids.inductance_save_button, ui)
+                                    .was_clicked()
+                                {
+                                    flcq.eeprom_write_f64(&25u8, &c);
+                                    flcq.eeprom_write_f64(&33u8, &l);
+                                }
                             }
                         }
                         (false, true) => (),
                         (true, true) => (),
                         (false, false) => (),
                     };
+                }
+            }
+            // ====================================================================================
+            // tab C
+            // ====================================================================================
+            widget::Text::new("Cref1: ")
+                .top_left_with_margins_on(ids.tab_capacitance, 70.0, 40.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_cref1_label, ui);
+
+            match c_ref1.clone() {
+                Some(f) => {
+                    for edit in &widget::TextEdit::new(&format!("{:.2}", f))
+                        .top_left_with_margins_on(ids.tab_capacitance, 70.0, 50.0)
+                        .color(color::BLACK)
+                        .font_size(25)
+                        .line_spacing(3.0)
+                        .w(250.0)
+                        .wrap_by_character()
+                        .right_justify()
+                        .restrict_to_height(false) // Let the height grow infinitely and scroll.
+                        .parent(ids.tab_capacitance)
+                        .set(ids.capacitance_cref1_edit, ui)
+                    {
+                        let s = edit.clone();
+                        let f = s.parse::<f64>().unwrap();
+                        if 9.0 < f && f < 10000.99 {
+                            c_ref1 = Some(f);
+                        }
+                    }
+                }
+                None => c_ref1 = Some(1000.0),
+            }
+
+            widget::Text::new("pF")
+                .top_left_with_margins_on(ids.tab_capacitance, 70.0, 310.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_cref1_pf, ui);
+
+            widget::Text::new("Cref2: ")
+                .top_left_with_margins_on(ids.tab_capacitance, 100.0, 40.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_cref2_label, ui);
+
+            match c_ref2.clone() {
+                Some(f) => {
+                    for edit in &widget::TextEdit::new(&format!("{:.2}", f))
+                        .top_left_with_margins_on(ids.tab_capacitance, 100.0, 50.0)
+                        .color(color::BLACK)
+                        .font_size(25)
+                        .line_spacing(3.0)
+                        .w(250.0)
+                        .wrap_by_character()
+                        .right_justify()
+                        .restrict_to_height(false) // Let the height grow infinitely and scroll.
+                        .parent(ids.tab_capacitance)
+                        .set(ids.capacitance_cref2_edit, ui)
+                    {
+                        let s = edit.clone();
+                        let f = s.parse::<f64>().unwrap();
+                        if 9.0 < f && f < 10000.99 {
+                            c_ref2 = Some(f);
+                        }
+                    }
+                }
+                None => c_ref2 = Some(1000.0),
+            }
+
+            widget::Text::new("pF")
+                .top_left_with_margins_on(ids.tab_capacitance, 100.0, 310.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_cref2_pf, ui);
+
+            match (cref_input_active, cref_eeprom_active) {
+                (true, false) => (),
+                (false, true) => (),
+                (true, true) => cref_input_active = false,
+                (false, false) => cref_eeprom_active = true,
+            }
+
+            for v in &mut widget::Toggle::new(cref_input_active)
+                .top_left_with_margins_on(ids.tab_capacitance, 30.0, 10.0)
+                .parent(ids.tab_capacitance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .w(30.0)
+                .set(ids.capacitance_cref1_toggle, ui)
+            {
+                let n = v.clone();
+                if n {
+                    cref_input_active = true;
+                    cref_eeprom_active = false;
+                } else {
+                    cref_input_active = false;
+                    cref_eeprom_active = true;
+                }
+            }
+
+            for v in &mut widget::Toggle::new(cref_eeprom_active)
+                .top_left_with_margins_on(ids.tab_capacitance, 30.0, 550.0)
+                .parent(ids.tab_capacitance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .w(30.0)
+                .set(ids.capacitance_cref2_toggle, ui)
+            {
+                let n = v.clone();
+                if n {
+                    cref_input_active = false;
+                    cref_eeprom_active = true;
+                } else {
+                    cref_input_active = true;
+                    cref_eeprom_active = false;
+                }
+            }
+
+            widget::Text::new("Input C [edit]: ")
+                .top_left_with_margins_on(ids.tab_capacitance, 30.0, 70.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_input_label, ui);
+
+            widget::Text::new("Saved C [EEPROM]: ")
+                .top_left_with_margins_on(ids.tab_capacitance, 30.0, 610.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_eeprom_label, ui);
+
+            match (lref_input_active, lref_eeprom_active) {
+                (true, false) => (),
+                (false, true) => (),
+                (true, true) => lref_input_active = false,
+                (false, false) => lref_eeprom_active = true,
+            }
+
+            for v in &mut widget::Toggle::new(lref_input_active)
+                .top_left_with_margins_on(ids.tab_capacitance, 140.0, 10.0)
+                .parent(ids.tab_capacitance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .w(30.0)
+                .set(ids.capacitance_lref1_toggle, ui)
+            {
+                let n = v.clone();
+                if n {
+                    lref_input_active = true;
+                    lref_eeprom_active = false;
+                } else {
+                    lref_input_active = false;
+                    lref_eeprom_active = true;
+                }
+            }
+
+            for v in &mut widget::Toggle::new(lref_eeprom_active)
+                .top_left_with_margins_on(ids.tab_capacitance, 140.0, 550.0)
+                .parent(ids.tab_capacitance)
+                .enabled(true)
+                .color(conrod::color::GREEN)
+                .border(4.0)
+                .border_color(conrod::color::RED)
+                .w(30.0)
+                .set(ids.capacitance_lref2_toggle, ui)
+            {
+                let n = v.clone();
+                if n {
+                    lref_input_active = false;
+                    lref_eeprom_active = true;
+                } else {
+                    lref_input_active = true;
+                    lref_eeprom_active = false;
+                }
+            }
+
+            widget::Text::new("Input L ")
+                .top_left_with_margins_on(ids.tab_capacitance, 140.0, 70.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_input_l_label, ui);
+
+            widget::Text::new("Saved L [EEPROM]: ")
+                .top_left_with_margins_on(ids.tab_capacitance, 140.0, 610.0)
+                .color(conrod::color::BLACK)
+                .font_size(25)
+                .line_spacing(3.0)
+                .parent(ids.tab_capacitance)
+                .set(ids.capacitance_eeprom_l_label, ui);
+
+            match eeprom_lc.clone() {
+                Some(p) => {
+                    let (c, l) = p;
+                    if (0.0 < c) && (c < 200.0) && (0.0 < l) && (l < 300.0) {
+                        widget::Text::new(&format!("C: {:.2} pF, L {:.2} µH", c, l))
+                            .top_left_with_margins_on(ids.tab_capacitance, 180.0, 560.0)
+                            .color(conrod::color::BLACK)
+                            .font_size(25)
+                            .line_spacing(3.0)
+                            .parent(ids.tab_capacitance)
+                            .set(ids.capacitance_eeprom_lc_label, ui);
+                    } else {
+                        widget::Text::new("C: NaN pF, L NaN µH")
+                            .top_left_with_margins_on(ids.tab_capacitance, 180.0, 560.0)
+                            .color(conrod::color::BLACK)
+                            .font_size(25)
+                            .line_spacing(3.0)
+                            .parent(ids.tab_capacitance)
+                            .set(ids.capacitance_eeprom_lc_label, ui);
+                    }
+                }
+                None if flcq.is_init() => {
+                    let c = flcq.eeprom_read_f64(&25u8);
+                    let l = flcq.eeprom_read_f64(&33u8);
+                    let pack = (c, l);
+                    eeprom_lc = Some(pack);
+                }
+                None => (),
+            }
+
+            match (frequency1_c.clone(), frequency2_c.clone()) {
+                ((None, str), _) => {
+                    if widget::Button::new()
+                        .w_h(250.0 * 0.8, 100.0 * 0.8)
+                        .bottom_left_with_margins_on(ids.tab_inductance, 150.0, 800.0)
+                        .label_font_size(45)
+                        .enabled(flcq.is_init())
+                        .label("F1")
+                        .parent(ids.tab_inductance)
+                        .set(ids.inductance_measure_button, ui)
+                        .was_clicked()
+                    {
+                        frequency1_l = frequency_pack(&mut flcq);
+                    };
+
+                    widget::Text::new(&str)
+                        .color(conrod::color::BLACK)
+                        .top_left_with_margins_on(ids.error, 5.0, 5.0)
+                        .right_justify()
+                        .font_size(16)
+                        .line_spacing(3.0)
+                        .set(ids.error_label, ui);
                 }
             }
 
@@ -936,16 +1378,6 @@ fn frequency_pack(com_port: &mut com::Flcq) -> FpackT {
     r
 }
 
-fn l_tab(ui: &mut conrod::UiCell, ids: &Ids, c: f64, l: f64) {
-    let txt = &format!("coil L: {:.2} nH, coil C: {:.2} pF", l, c);
-    widget::Text::new(txt)
-        .top_left_with_margins_on(ids.tab_inductance, 170.0, 30.0)
-        .color(conrod::color::BLACK)
-        .font_size(45)
-        .line_spacing(1.0)
-        .set(ids.inductance_c, ui);
-}
-
 fn temperature(
     ui: &mut conrod::UiCell,
     ids: &Ids,
@@ -975,35 +1407,31 @@ fn temperature(
     }*/
 }
 
-fn l1(fa: f64, fb: f64, period: f64, c_ref: f64) -> (f64, f64) {
-    let mut f1 = 0.0;
-    let mut f2 = 0.0;
-    if fa < fb {
-        f1 = fb / period;
-        f2 = fa / period;
-    } else {
-        f1 = fa / period;
-        f2 = fb / period;
-    }
-    let c = (f2 * f2) / ((f1 * f1) - (f2 * f2)) * c_ref;
-
-    let c_farad = c / 1000_000_000_000.0;
-    let l = 1.0 / (4.0 * std::f64::consts::PI * std::f64::consts::PI * f1 * f1 * c_farad);
-    (c, l * 1000_000_000.0)
-}
-
-fn l2(f1: f64, f2: f64, c1: f64, c2: f64) -> (f64, f64) {
+fn calc_l(f1: f64, f2: f64, c1: f64, c2: f64) -> (f64, f64) {
     let f1_2 = f1 * f1;
     let f2_2 = f2 * f2;
-    let c = (f1_2 * c1 - f2_2 * c2) / (f2_2 - f1_2);
 
     let c1f = c1 / 1000_000_000_000.0; // in farad
     let c2f = c2 / 1000_000_000_000.0;
 
+    let c = (f1_2 * c1f - f2_2 * c2f) / (f2_2 - f1_2);
+
     let l = (1.0 / f1_2 - 1.0 / f2_2)
         / (4.0 * std::f64::consts::PI * std::f64::consts::PI * (c1f - c2f)); // in Henry
 
-    (c, l * 1000_000_000.0) // return in pico farads and micro Henrys
+    (c * 1000_000_000_000.0, l * 1000_000.0) // return in pico farads and micro Henrys
+}
+
+fn calc_c(f1: f64, f2: f64, c1: f64, c2: f64, c0: f64) -> f64 {
+    let f1_2 = f1 * f1;
+    let f2_2 = f2 * f2;
+
+    let c1f = c1 / 1000_000_000_000.0; // in farad
+    let c2f = c2 / 1000_000_000_000.0;
+
+    let c = (f1_2 * c1f - f2_2 * c2f) / (f2_2 - f1_2) - c0;
+
+    c * 1000_000_000_000.0 // return in pico farads
 }
 
 fn freq_show(ui: &mut conrod::UiCell, ids: &Ids, text: String) -> Option<f64> {
