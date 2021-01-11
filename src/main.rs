@@ -10,12 +10,15 @@ extern crate conrod;
 use clap::{App, AppSettings, Arg};
 use conrod::backend::glium::glium::{self, Surface};
 use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
+mod calc;
 mod com;
 mod commands;
 mod eeprom;
+mod inductance;
 
 use commands::TCommand;
 
+use calc::CalculationL;
 use eeprom::TEeprom as Eeprom;
 
 conrod::widget_ids! {
@@ -73,6 +76,7 @@ conrod::widget_ids! {
         capacitance_c_label,
         capacitance_save_c1_button,
         capacitance_save_c2_button,
+        capacitance_input_lc_label,
         tab_inductance,
         tab_crystal,
         label_frequency,
@@ -263,6 +267,9 @@ fn main() {
         ids.error,
         ids.error_label,
     );
+
+    let mut l_tab_c0l0: Option<(f64, f64)> = None;
+    let mut c_tab_c0l0: Option<(f64, f64)> = None;
 
     'render: loop {
         // Handle all events.
@@ -656,9 +663,20 @@ fn main() {
                     .set(ids.error_label, ui),
             }*/
 
+            let c0l0 = {
+                if let Some(_) = l_tab_c0l0 {
+                    l_tab_c0l0.clone()
+                } else if let Some(_) = c_tab_c0l0 {
+                    c_tab_c0l0.clone()
+                } else {
+                    None
+                }
+            };
+
             // ====================================================================================
             // tab inductance
             // ====================================================================================
+
             cref_source.update_inductance_tab_cref(&eeprom, ui);
 
             /*{
@@ -697,13 +715,52 @@ fn main() {
                 ids.inductance_calibration_temperature_f2_label,
                 ids.inductance_delta_temperature_f2_label,
             );
+
+            if let Some((c, l)) = l_tab_c0l0 {
+                widget::Text::new(&format!("L: {:.2} uH", l))
+                    .bottom_left_with_margins_on(ids.tab_inductance, 120.0, 20.0)
+                    .color(conrod::color::BLACK)
+                    .font_size(35)
+                    .line_spacing(3.0)
+                    .parent(ids.tab_inductance)
+                    .set(ids.inductance_l_label, ui);
+
+                widget::Text::new(&format!("C: {:.2} pF", c))
+                    .bottom_left_with_margins_on(ids.tab_inductance, 120.0, 800.0 - 530.0)
+                    .color(conrod::color::BLACK)
+                    .font_size(35)
+                    .line_spacing(3.0)
+                    .parent(ids.tab_inductance)
+                    .set(ids.inductance_c_label, ui);
+
+                if widget::Button::new()
+                    .w_h(220.0, 70.0)
+                    .bottom_left_with_margins_on(ids.tab_inductance, 100.0, 800.0 - 250.0)
+                    .label("SAVE")
+                    .label_font_size(35)
+                    .color(conrod::color::LIGHT_BLUE)
+                    .set(ids.inductance_save_button, ui)
+                    .was_clicked()
+                {
+                    history.append_eeprom(Box::new(commands::TSaveCL { value: (c, l) }));
+                }
+            }
+
             match f1_f2.show(ui) {
-                EClick::FNONE => (),
+                EClick::FNONE => {
+                    l_tab_c0l0 = None;
+                }
                 EClick::F1 => f1_f2.f1_set(frequency_pack(&mut flcq)),
                 EClick::F2 => f1_f2.f2_set(frequency_pack(&mut flcq)),
                 EClick::END(f1, f2) => {
                     if let (Some(c1), Some(c2)) = cref_source.crefs() {
-                        let (c, l) = calc_l(f1, f2, c1, c2);
+                        history.append(Box::new(CalculationL {
+                            c0l0: &mut l_tab_c0l0,
+                            f1: f1,
+                            f2: f2,
+                            c1: c1,
+                            c2: c2,
+                        }));
                         /*widget::Text::new("Results: ")
                         .top_left_with_margins_on(ids.tab_inductance, 320.0, 70.0)
                         .color(conrod::color::BLACK)
@@ -711,34 +768,6 @@ fn main() {
                         .line_spacing(3.0)
                         .parent(ids.tab_inductance)
                         .set(ids.inductance_results_label, ui);*/
-
-                        widget::Text::new(&format!("L: {:.2} uH", l))
-                            .bottom_left_with_margins_on(ids.tab_inductance, 120.0, 20.0)
-                            .color(conrod::color::BLACK)
-                            .font_size(35)
-                            .line_spacing(3.0)
-                            .parent(ids.tab_inductance)
-                            .set(ids.inductance_l_label, ui);
-
-                        widget::Text::new(&format!("C: {:.2} pF", c))
-                            .bottom_left_with_margins_on(ids.tab_inductance, 120.0, 800.0 - 530.0)
-                            .color(conrod::color::BLACK)
-                            .font_size(35)
-                            .line_spacing(3.0)
-                            .parent(ids.tab_inductance)
-                            .set(ids.inductance_c_label, ui);
-
-                        if widget::Button::new()
-                            .w_h(220.0, 70.0)
-                            .bottom_left_with_margins_on(ids.tab_inductance, 100.0, 800.0 - 250.0)
-                            .label("SAVE")
-                            .label_font_size(35)
-                            .color(conrod::color::LIGHT_BLUE)
-                            .set(ids.inductance_save_button, ui)
-                            .was_clicked()
-                        {
-                            history.append(Box::new(commands::TSaveCL { value: (c, l) }));
-                        }
                     }
                 }
             }
@@ -1077,6 +1106,24 @@ fn main() {
                 .parent(ids.tab_capacitance)
                 .set(ids.capacitance_input_l_label, ui);
 
+            if let Some((c0, l0)) = c0l0 {
+                widget::Text::new(&format!("C0: {:.2} pF, L0: {:.2} µH", c0, l0))
+                    .top_left_with_margins_on(ids.tab_capacitance, 130.0, 560.0)
+                    .color(conrod::color::BLACK)
+                    .font_size(25)
+                    .line_spacing(3.0)
+                    .parent(ids.tab_capacitance)
+                    .set(ids.capacitance_input_lc_label, ui);
+            } else {
+                widget::Text::new("C0: None pF, L0: None µH")
+                    .top_left_with_margins_on(ids.tab_capacitance, 130.0, 560.0)
+                    .color(conrod::color::BLACK)
+                    .font_size(25)
+                    .line_spacing(3.0)
+                    .parent(ids.tab_capacitance)
+                    .set(ids.capacitance_input_lc_label, ui);
+            }
+
             widget::Text::new("Saved L [EEPROM]: ")
                 .top_left_with_margins_on(ids.tab_capacitance, 165.0, 60.0)
                 .color(conrod::color::BLACK)
@@ -1124,7 +1171,9 @@ fn main() {
                 EClick::F2 => f1_f2.f2_set(frequency_pack(&mut flcq)),
                 EClick::END(f1, f2) => {
                     if let (Some(c1), Some(c2)) = cref_source.crefs() {
-                        if let Some(c0) = eeprom.c0() {
+                        if let (false, true, Some(c0)) =
+                            (lref_input_active, lref_eeprom_active, eeprom.c0())
+                        {
                             let c = calc_c(f1, f2, c1, c2, c0);
 
                             widget::Text::new(&format!("C: {:.2} pF", c))
@@ -1144,7 +1193,7 @@ fn main() {
                                 .set(ids.capacitance_save_c1_button, ui)
                                 .was_clicked()
                             {
-                                history.append(Box::new(commands::TSaveCref1 { value: c }));
+                                history.append_eeprom(Box::new(commands::TSaveCref1 { value: c }));
                             }
 
                             if widget::Button::new()
@@ -1156,10 +1205,57 @@ fn main() {
                                 .set(ids.capacitance_save_c2_button, ui)
                                 .was_clicked()
                             {
-                                history.append(Box::new(commands::TSaveCref2 { value: c }));
+                                history.append_eeprom(Box::new(commands::TSaveCref2 { value: c }));
+                            }
+                        } else if let (true, false) = (lref_input_active, lref_eeprom_active) {
+                            if let Some((c0, _)) = c0l0 {
+                                let c = calc_c(f1, f2, c1, c2, c0);
+
+                                widget::Text::new(&format!("C: {:.2} pF", c))
+                                    .bottom_left_with_margins_on(ids.tab_capacitance, 120.0, 20.0)
+                                    .color(conrod::color::BLACK)
+                                    .font_size(35)
+                                    .line_spacing(3.0)
+                                    .parent(ids.tab_capacitance)
+                                    .set(ids.capacitance_c_label, ui);
+
+                                if widget::Button::new()
+                                    .w_h(220.0, 70.0)
+                                    .bottom_left_with_margins_on(ids.tab_capacitance, 100.0, 300.0)
+                                    .label("SAVE as Cref1")
+                                    .label_font_size(28)
+                                    .color(conrod::color::LIGHT_BLUE)
+                                    .set(ids.capacitance_save_c1_button, ui)
+                                    .was_clicked()
+                                {
+                                    history
+                                        .append_eeprom(Box::new(commands::TSaveCref1 { value: c }));
+                                }
+
+                                if widget::Button::new()
+                                    .w_h(220.0, 70.0)
+                                    .bottom_left_with_margins_on(ids.tab_capacitance, 100.0, 550.0)
+                                    .label("SAVE as Cref2")
+                                    .label_font_size(28)
+                                    .color(conrod::color::LIGHT_BLUE)
+                                    .set(ids.capacitance_save_c2_button, ui)
+                                    .was_clicked()
+                                {
+                                    history
+                                        .append_eeprom(Box::new(commands::TSaveCref2 { value: c }));
+                                }
+                            } else {
+                                history.append(Box::new(CalculationL {
+                                    c0l0: &mut c_tab_c0l0,
+                                    f1: f1,
+                                    f2: f2,
+                                    c1: c1,
+                                    c2: c2,
+                                }));
                             }
                         }
                     }
+
                     history.eeprom(&mut (*eeprom));
                 }
             }
@@ -1340,20 +1436,6 @@ fn swap_f(f1: f64, f2: f64) -> bool {
 
 fn swap_c(c1: f64, c2: f64) -> bool {
     swap_f(c2, c1)
-}
-
-fn calc_l(f1: f64, f2: f64, c1: f64, c2: f64) -> (f64, f64) {
-    let f1_2 = f1 * f1;
-    let f2_2 = f2 * f2;
-
-    let c1f = c1 / 1000_000_000.0; // in farad
-    let c2f = c2 / 1000_000_000.0;
-
-    let c = (f1_2 * c1 - f2_2 * c2) / (f2_2 - f1_2);
-
-    let l = (1.0 / f1_2 - 1.0 / f2_2)
-        / (4.0 * std::f64::consts::PI * std::f64::consts::PI * (c1f - c2f)); // in Henry
-    (c, l * 1000_000_000.0) // return in pico farads and micro Henrys
 }
 
 fn calc_c(f1: f64, f2: f64, c1: f64, c2: f64, c0: f64) -> f64 {

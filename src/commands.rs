@@ -53,8 +53,12 @@ impl<'b> MacroCommand<'b> {
         }
     }
 
-    pub fn append(&mut self, cmd: Box<dyn TCommandEeprom + 'b>) {
+    pub fn append_eeprom(&mut self, cmd: Box<dyn TCommandEeprom + 'b>) {
         self.stack_eeprom.push(cmd);
+    }
+
+    pub fn append(&mut self, cmd: Box<dyn TCommand + 'b>) {
+        self.stack.push(cmd);
     }
 
     fn undo(&mut self) {

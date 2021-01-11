@@ -296,10 +296,17 @@
 			}
 		},
 		{
+			"contents": "extern crate clap;\nextern crate serialport;\n\n//use std::io::{self, Write};\n//use std::time::Duration;\n\n//use serialport::prelude::*;\n\nfn timeout<P: serialport::SerialPort, T: std::fmt::Display>(port: &P, s: &T) -> () {\n    match port.name() {\n        Some(name) => println!(\"{}: Timeout port \\\"{}\\\"\", s, name),\n        None => println!(\"\\\"{}\\\" port name is not avilable\", s),\n    }\n}\n\nfn eeprom_write_byte<P: serialport::SerialPort>(port: &P, address: &u8, data: &u8) -> () {\n    let write_data = vec![0x03u8, *data, *address, 0xFFu8, 0xFFu8];\n\n    match port.write(&write_data) {\n        Ok(_) => {\n            let mut read_data = vec![0; 5];\n            match port.read(&mut read_data) {\n                Ok(_n) => {\n                    if read_data[0] == 0x04\n                        && read_data[1] == *data\n                        && read_data[2] == *address\n                        && _n == 5\n                    {\n                        ()\n                    }\n                }\n                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(\n                    port,\n                    &std::string::String::from(\" [eeprom write byte respond ] \"),\n                ),\n                Err(e) => eprintln!(\"{:?}\", e),\n            }\n        }\n        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(\n            port,\n            &std::string::String::from(\" [eeprom write byte request ] \"),\n        ),\n        Err(e) => panic!(\"Error while writing data to the port: {}\", e),\n    };\n}\n\nfn eeprom_read_byte<P: serialport::SerialPort>(port: &P, adrress: &u8) -> u8 {\n    let write_data = vec![0x05u8, *adrress, 0xFFu8, 0xFFu8];\n\n    match port.write(&write_data) {\n        Ok(_) => (),\n        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => timeout(\n            port,\n            &std::string::String::from(\" [ eeprom read byte request ] \"),\n        ),\n        Err(e) => eprintln!(\"{:?}\", e),\n    }\n    let mut read_data = vec![0; 5];\n    match port.read(&mut read_data) {\n        Ok(_n) => {\n            //println!(\"{} {} {}\", read_data[0], read_data[1], read_data[2]);\n            if read_data[0] == 0x04 && read_data[2] == *adrress && _n == 5 {\n                read_data[1]\n            } else {\n                eprintln!(\"return address is different as in read command\");\n                0xFFu8\n            }\n        }\n        Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {\n            timeout(port, &std::string::String::from(\" [ eeprom read byte ] \"));\n            0xFFu8\n        }\n        Err(e) => {\n            eprintln!(\"{:?}\", e);\n            0xFFu8\n        }\n    }\n}\n\npub struct Flcq {\n    port: Option<Box<dyn serialport::SerialPort>>,\n}\n\nimpl Flcq {\n    fn new<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(port_name: &T) -> Self {\n        let mut settings: serialport::SerialPortSettings = Default::default();\n        settings.timeout = std::time::Duration::from_millis(100000);\n        settings.baud_rate = 57600u32;\n        match serialport::open_with_settings(&port_name, &settings) {\n            Ok(result) => Flcq { port: Some(result) },\n            Err(e) => {\n                eprintln!(\"Failed to open \\\"{}\\\". Error: {}\", port_name, e);\n                ::std::process::exit(1);\n            }\n        }\n    }\n}\n\nimpl Flcq {\n    pub fn disconnect(&mut self) {\n        self.port = None;\n    }\n}\n\nimpl Flcq {}\n\nimpl Flcq {\n        fn eeprom_write_f64(&mut self, _adrress: &u8, _value: &f64) -> () {\n        let b = _value.clone();\n        let _byte_array: f64;\n        unsafe {\n             _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);\n        }\n            for (i, item) in _byte_array.iter().enumerate() {\n                let adrress = *_adrress + i as u8;\n                //println!(\"{} {}\", i, item);\n                //thread::sleep(std::time::Duration::from_millis(1000));\n                self.eeprom_write_byte(&adrress, &item);\n            }\n        }\n    }\n\n}\n\nimpl Flcq {\n    fn eeprom_write_f64(&mut self, _adrress: &u8, _value: &f64) -> () {\n        let b = _value.clone();\n        let _byte_array: f64;\n        unsafe {\n             _byte_array = std::mem::transmute::<f64, [u8; 8]>(b);\n        }\n            for (i, item) in _byte_array.iter().enumerate() {\n                let adrress = *_adrress + i as u8;\n                //println!(\"{} {}\", i, item);\n                //thread::sleep(std::time::Duration::from_millis(1000));\n                self.eeprom_write_byte(&adrress, &item);\n            }\n        }\n    }\n}\n\nimpl Flcq {\n    pub fn eeprom_read_f64(&mut self, _adrress: &u8) -> f64 {\n        unsafe {\n            let mut _byte_array = [0u8; 8];\n\n            for i in 0..=7 {\n                let adrress = *_adrress + i as u8;\n                _byte_array[i] = self.eeprom_read_byte(&adrress);\n            }\n            std::mem::transmute::<[u8; 8], f64>(_byte_array)\n        }\n    }\n}\n\nimpl Flcq {\n    fn temperature(&self, _first: u8, _second: u8) -> f64 {\n        let data = [_second, _first];\n        unsafe {\n            let raw = std::mem::transmute::<[u8; 2], u16>(data);\n            let f = raw as f64;\n            f * 0.0625\n        }\n    }\n}\n\n//temperature\nimpl Flcq {\n    pub fn t(&mut self) -> f64 {\n        let write_data = vec![0x09u8, 0x08u8, 0x00u8, 0xFFu8, 0xFFu8];\n        let mut res: f64 = -100.0;\n        match self.port.write(&write_data) {\n            Ok(_) => (),\n            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                &std::string::String::from(\" [ query for temperature from FLCQ ] \"),\n            ),\n            Err(e) => eprintln!(\"{:?}\", e),\n        };\n        let mut read_data = vec![0; 5];\n        match self.port.read(&mut read_data) {\n            Ok(_n) => {\n                if read_data[0] == 0x0A && _n == 5 {\n                    res = self.temperature(read_data[1], read_data[2])\n                }\n            }\n            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                &std::string::String::from(\" [ wait for temperature from FLCQ ] \"),\n            ),\n            Err(e) => eprintln!(\"{:?}\", e),\n        }\n        res\n    }\n}\nimpl Flcq {\n    fn frequency(&self, prescaler: u8, tmr0: u8, overflows_array: [u8; 4]) -> f64 {\n        let overflows: u32;\n        unsafe {\n            overflows = std::mem::transmute::<[u8; 4], u32>(overflows_array);\n        }\n        let prescaler_values = [1.0f64, 2.0f64, 4.0f64, 8.0f64, 16.0f64];\n        println!(\n            \"{} {} {}\",\n            overflows,\n            prescaler_values[(prescaler + 1u8) as usize],\n            tmr0 as f64\n        );\n        prescaler_values[(prescaler + 1u8) as usize] * (256.0f64 * overflows as f64 + tmr0 as f64)\n    }\n}\n\nimpl Flcq {\n    pub fn get_frequency_c(&mut self, n: u8) -> f64 {\n        let mut freq: f64 = -10000.0f64;\n        if (0 < n) && (n < 255) {\n            let write_data = vec![0x0Bu8, 0x10u8, 0x00u8, n, 0xFFu8, 0xFFu8];\n            match self.port.write(&write_data) {\n                Ok(_) => (),\n                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                    &std::string::String::from(\" [ query for frequency from FLCQ ] \"),\n                ),\n                Err(e) => eprintln!(\"{:?}\", e),\n            };\n\n            let mut read_data = vec![0; 9];\n\n            match self.port.read(&mut read_data) {\n                Ok(_n) => {\n                    let n_overflow_tmp = [read_data[3], read_data[4], read_data[5], read_data[6]];\n                    let overflows: u32;\n                    unsafe {\n                        overflows = std::mem::transmute::<[u8; 4], u32>(n_overflow_tmp);\n                    }\n                    println!(\"overflows {}\", overflows);\n                    if read_data[0] == 0x06 && _n == 9 {\n                        let n_overflow = [read_data[3], read_data[4], read_data[5], read_data[6]];\n                        freq = self.frequency(read_data[1], read_data[2], n_overflow);\n                    }\n                }\n                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                    &std::string::String::from(\" [ wait for temperature from FLCQ ] \"),\n                ),\n                Err(e) => eprintln!(\"{:?}\", e),\n            }\n        } else {\n            println!(\"wrong averging over {:?}, must be (0 < n < 255) \", n);\n        }\n        freq\n    }\n}\n\nimpl Flcq {\n    fn get_frequency(&mut self, mut n: u8) -> f64 {\n        if (0 < n) && (n < 255) {\n            let write_data = vec![0x07u8, 0x10u8, 0x00u8, n, 0xFFu8, 0xFFu8];\n            match self.port.write(&write_data) {\n                Ok(_) => (),\n                Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                    &std::string::String::from(\" [ query for frequency from FLCQ ] \"),\n                ),\n                Err(e) => eprintln!(\"{:?}\", e),\n            };\n\n            let mut frequencies = Vec::new();\n            loop {\n                let mut read_data = vec![0; 9];\n                match self.port.read(&mut read_data) {\n                    Ok(_n) => {\n                        if read_data[0] == 0x06 && _n == 9 {\n                            let n_overflow =\n                                [read_data[3], read_data[4], read_data[5], read_data[6]];\n                            frequencies.push(self.frequency(\n                                read_data[1],\n                                read_data[2],\n                                n_overflow,\n                            ));\n                        }\n                    }\n                    Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => self.timeout(\n                        &std::string::String::from(\" [ wait for temperature from FLCQ ] \"),\n                    ),\n                    Err(e) => eprintln!(\"{:?}\", e),\n                }\n                n = n - 1;\n                if n == 0 {\n                    break;\n                }\n            }\n            let sum = frequencies.iter().sum::<f64>() as f64;\n            sum / frequencies.len() as f64\n        } else {\n            println!(\"wrong averging over {:?}, must be (0 < n < 255) \", n);\n            -1000.0f64\n        }\n    }\n}\n\npub fn ports() -> std::result::Result<std::vec::Vec<serialport::SerialPortInfo>, serialport::Error>\n{\n    serialport::available_ports()\n}\n\npub fn open<T: std::fmt::Display + AsRef<std::ffi::OsStr> + ?Sized>(v: &T) -> Flcq {\n    Flcq::new(v)\n}\n",
 			"file": "src/com.rs",
+			"file_size": 10218,
+			"file_write_time": 132352108779703771,
 			"settings":
 			{
+<<<<<<< Updated upstream
 				"buffer_size": 13896,
+=======
+				"buffer_size": 10483,
+>>>>>>> Stashed changes
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -764,7 +771,11 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
+<<<<<<< Updated upstream
 						"translation.y": 25662.0,
+=======
+						"translation.y": 3457.0,
+>>>>>>> Stashed changes
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -833,15 +844,24 @@
 					"semi_transient": false,
 					"settings":
 					{
+<<<<<<< Updated upstream
 						"buffer_size": 13896,
+=======
+						"buffer_size": 10483,
+>>>>>>> Stashed changes
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
+<<<<<<< Updated upstream
 								1255,
 								1255
+=======
+								3416,
+								3967
+>>>>>>> Stashed changes
 							]
 						],
 						"settings":
@@ -851,7 +871,11 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
+<<<<<<< Updated upstream
 						"translation.y": 342.0,
+=======
+						"translation.y": 1629.0,
+>>>>>>> Stashed changes
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
