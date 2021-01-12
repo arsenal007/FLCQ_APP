@@ -13,6 +13,7 @@ use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Size
 mod com;
 mod commands;
 mod eeprom;
+mod sm;
 
 use commands::TCommand;
 
@@ -198,7 +199,7 @@ pub struct TwoFreq<'a> {
 }
 
 fn main() {
-    let mut flcq: com::Flcq = com::init();
+    //let mut flcq: com::Flcq = com::init();
     let mut eeprom = Box::new(Eeprom::default());
     //_flcq.eeprom_write_f64(&0u8, &128.0f64);
     //println!("{:?}", _flcq.eeprom_read_f64(&0u8));
@@ -263,6 +264,8 @@ fn main() {
         ids.error,
         ids.error_label,
     );
+
+    let mut sm = sm::Factory::new();
 
     'render: loop {
         // Handle all events.
@@ -409,6 +412,7 @@ fn main() {
                     match selected_uart_port {
                         Some(id) => {
                             flcq = com::open(&list[id].port_name);
+                            history.append()
                         }
                         None => (),
                     }

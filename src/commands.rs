@@ -53,6 +53,10 @@ impl<'b> MacroCommand<'b> {
         }
     }
 
+
+
+
+
     pub fn append(&mut self, cmd: Box<dyn TCommandEeprom + 'b>) {
         self.stack_eeprom.push(cmd);
     }
