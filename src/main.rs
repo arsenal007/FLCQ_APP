@@ -20,7 +20,7 @@ use commands::TCommand;
 use eeprom::TEeprom as Eeprom;
 
 conrod::widget_ids! {
-    struct Ids {
+    pub struct Ids {
         master,
         top,
         uart,
@@ -238,16 +238,6 @@ fn main() {
     let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();
     let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
 
-    let list = com::ports().unwrap();
-
-    let mut a = Vec::new();
-
-    let mut selected_uart_port: std::option::Option<usize> = Some(0usize);
-
-    for x in &list {
-        a.push(x.port_name.clone());
-    }
-
     let frequency_count_intervals = (1.0, 254.0);
 
     let mut f_ref = None;
@@ -265,7 +255,7 @@ fn main() {
         ids.error_label,
     );
 
-    let mut sm = sm::Factory::new();
+    let mut sm = sm::Factory::new(&ids);
 
     'render: loop {
         // Handle all events.
@@ -337,87 +327,9 @@ fn main() {
                 .floating(true)
                 .set(ids.master, ui);
 
-            conrod::widget::Tabs::new(&[
-                (ids.tab_frequency, "FREQUENCY"),
-                (ids.tab_frequency_calibration, "F CALIBRATION"),
-                (ids.tab_inductance, "L MEASURMENTS"),
-                (ids.tab_capacitance, "C MEASURMENTS"),
-                (ids.tab_crystal, "Q MEASURMENTS"),
-            ])
-            .h_of(ids.top)
-            .parent(ids.top)
-            .middle()
-            .layout_horizontally()
-            .color(conrod::color::WHITE)
-            .label_color(conrod::color::BLACK)
-            .starting_canvas(ids.tab_frequency)
-            .label_font_size(50)
-            .set(ids.tabs, ui);
+            sm.machine.plot(&mut ui);
 
-            widget::Text::new("UART PORT: ")
-                //.padded_w_of(ids.left_col, PAD)
-                .mid_left_with_margin_on(ids.uart, 10.0)
-                .color(conrod::color::BLACK)
-                .font_size(35)
-                .line_spacing(3.0)
-                .set(ids.uart_label_port, ui);
-
-            let ports = widget::DropDownList::new(&a, selected_uart_port)
-                .scrollbar_next_to()
-                .max_visible_items(1usize)
-                .h_of(ids.uart)
-                .w(300.0)
-                .scrollbar_width(40.0)
-                .color(conrod::color::WHITE) // conrod::color::YELLOW
-                .label_font_size(35)
-                .center_justify_label()
-                .top_left_with_margins_on(ids.uart, 0.0, 300.0)
-                .set(ids.uart_ports, ui);
-
-            match ports {
-                Some(id) => {
-                    println!("id {}\n", id);
-                    selected_uart_port = Some(id)
-                }
-                None => (),
-            }
-
-            let mut history = commands::MacroCommand::new();
-            eeprom.communicate(&mut flcq);
-
-            if flcq.is_init() {
-                if widget::Button::new()
-                    .top_left_with_margins_on(ids.uart, 0.0, 600.0)
-                    .h_of(ids.uart)
-                    .w(350.0)
-                    .label("Click to Disconnect")
-                    .label_font_size(35)
-                    .color(conrod::color::GREEN)
-                    .set(ids.uart_connect_button, ui)
-                    .was_clicked()
-                {
-                    flcq.disconnect();
-                }
-            } else {
-                if widget::Button::new()
-                    .top_left_with_margins_on(ids.uart, 0.0, 600.0)
-                    .h_of(ids.uart)
-                    .w(350.0)
-                    .label("Click to Connect")
-                    .label_font_size(35)
-                    .color(conrod::color::RED) //RED
-                    .set(ids.uart_connect_button, ui)
-                    .was_clicked()
-                {
-                    match selected_uart_port {
-                        Some(id) => {
-                            flcq = com::open(&list[id].port_name);
-                            history.append()
-                        }
-                        None => (),
-                    }
-                }
-            }
+            sm.clicked();
 
             {
                 let (min, max) = frequency_count_intervals;
