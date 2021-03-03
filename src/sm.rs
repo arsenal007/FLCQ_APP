@@ -2,6 +2,8 @@ use super::com;
 use conrod::{widget, Colorable, Labelable, Positionable, Sizeable, Widget};
 use Ids;
 
+mod csm;
+
 struct PWidgets {
     tabs: widget::Id,
     top: widget::Id,
@@ -25,23 +27,6 @@ impl PWidgets {
         for x in &list {
             names_list.push(x.port_name.clone());
         }
-
-        conrod::widget::Tabs::new(&[
-            (self.tab_frequency, "FREQUENCY"),
-            (self.tab_frequency_calibration, "F CALIBRATION"),
-            (self.tab_inductance, "L MEASURMENTS"),
-            (self.tab_capacitance, "C MEASURMENTS"),
-            (self.tab_crystal, "Q MEASURMENTS"),
-        ])
-        .h_of(self.top)
-        .parent(self.top)
-        .middle()
-        .layout_horizontally()
-        .color(conrod::color::WHITE)
-        .label_color(conrod::color::BLACK)
-        .starting_canvas(self.tab_frequency)
-        .label_font_size(50)
-        .set(self.tabs, ui);
 
         widget::Text::new("UART PORT: ")
             //.padded_w_of(ids.left_col, PAD)
@@ -110,6 +95,9 @@ impl StateMachine<NotConnected> {
         Self {
             permament_widgets: PWidgets::new(ids),
             state: NotConnected {
+                top: ids.top,
+                tabs: ids.tabs,
+                tab_frequency_calibration: ids.tab_frequency_calibration,
                 uart: ids.uart,
                 uart_connect_button: ids.uart_connect_button,
             },
@@ -122,6 +110,7 @@ impl StateMachine<NotConnected> {
     fn plot(&mut self, ui: &mut conrod::UiCell) -> () {
         self.permament_widgets.plot(ui);
         self.clicked = self.state.pushed_connect(ui);
+        self.state.tabs(ui);
     }
 }
 
@@ -133,6 +122,9 @@ impl StateMachine<Connected> {
 }
 
 struct NotConnected {
+    top: widget::Id,
+    tabs: widget::Id,
+    tab_frequency_calibration: widget::Id,
     uart: widget::Id,
     uart_connect_button: widget::Id,
 }
@@ -148,6 +140,19 @@ impl NotConnected {
             .color(conrod::color::RED) //RED
             .set(self.uart_connect_button, ui)
             .was_clicked()
+    }
+
+    pub fn tabs(&mut self, ui: &mut conrod::UiCell) {
+        conrod::widget::Tabs::new(&[(self.tab_frequency_calibration, "F CALIBRATION")])
+            .h_of(self.top)
+            .parent(self.top)
+            .middle()
+            .layout_horizontally()
+            .color(conrod::color::WHITE)
+            .label_color(conrod::color::BLACK)
+            .starting_canvas(self.tab_frequency_calibration)
+            .label_font_size(50)
+            .set(self.tabs, ui);
     }
 }
 

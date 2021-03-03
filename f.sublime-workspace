@@ -1,0 +1,349 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"SA",
+				"SAMPLE_COUNT_TIMEOUT"
+			],
+			[
+				"PROG",
+				"PROGRAM_NAME"
+			],
+			[
+				"value_",
+				"Value_t"
+			],
+			[
+				"TEn",
+				"TEncode"
+			],
+			[
+				"LA",
+				"LASER_NAME"
+			],
+			[
+				"R",
+				"Recorder"
+			],
+			[
+				"S",
+				"System"
+			],
+			[
+				"__",
+				"__REGISTER"
+			],
+			[
+				"m",
+				"mingw64"
+			],
+			[
+				"f",
+				"folder"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: ins",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: in",
+				"Package Control: Install Package"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"Cl",
+				"Clang Format: Select Style"
+			],
+			[
+				"Package Control: i",
+				"Package Control: Install Package"
+			],
+			[
+				"Terminus: Open Default Shell in Tab",
+				"Terminus: Open Default Shell in Tab (View)"
+			],
+			[
+				"prefe",
+				"Preferences: Terminus Settings"
+			],
+			[
+				"pack",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 287.0,
+		"history":
+		[
+			"rm",
+			"help",
+			"make",
+			"clear"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_cortex.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_fmc.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/MATIO.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/FILES/scripts.py/cmp.py",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/CLD/TMatioClass.hpp",
+		"/9.2.0/bits/stl_vector.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/ae_cpu.sublime-workspace",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/ae_cpu.sublime-project",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/ae-cpu.code-workspace",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/FILES/JSON/emulator_precitec.json",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/emulator/emulator.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/emulator/cld.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/shared/Recorder.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/kernel/TSwitchingBuffer.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/FS/run.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/CMakeLists.txt",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/recorder/TRecorderIntensity.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/recorder/TActiveSetParameters.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/TActiveSetParameters.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/CLD/run.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/CLD/DSPRecord.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/parameters/data_def.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/instance.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/parameters/main.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/parameters/OldInterfaceAdapter.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/piercing/piercing.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/io_sensor_driver/io_sensor_driver.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/piercing/write_head.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/qflash/log_txt_int/msg.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/recorder/cache.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/piercing/piercing.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/FILES/JSON/precitec.json",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/TRecorderIntensity.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/piercing/run.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/log.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/log/log.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/piercing/TCommon.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/emulator/DSPRecord.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/conf.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/piercing/TRecord.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/FS/setup.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/Drivers/CMSIS/Include/cmsis_gcc.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usart.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/FS/FS.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_tim.h",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cmake/cortex-m7.cmake",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cmake/toolchain.cmake",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/pch/pch.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Src/FS/write_head.cpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/recorder/FWRecorder.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/recorder/CMakeFiles/FIRMWARE.elf.dir/build.make",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/FILES/LRF/SALVAGNINI/2721219.lrf",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/Parameters.hpp",
+		"/C/Users/vkuzmenko/STM32CubeIDE/workspace_1.3.0/AE_CPU_1_Playground/source/cpp/Inc/CLD/CLD.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/piercing/Recorder.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Src/firmware/firmware.cpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Src/piercing/piercing.cpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/c/src/crc.c",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/FILES/JSON/salvagnini.json",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/ae-cpu.code-workspace",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/SublimeGDB/SublimeGDB.sublime-settings",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/Pretty JSON/Pretty JSON.sublime-settings",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cmake/toolchain.cmake",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/instance.cpp",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/User/SublimeGDB.sublime-settings",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/Log Highlight/README.md",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/emulator/CLD/DSPRecord.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/build/SALVAGNINI_LPM/CMakeFiles/FIRMWARE.elf.dir/build.make",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/build/SALVAGNINI_LPM/out.log",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_tim.h",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/Parameters.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/FILES/BASH/debug.sh",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/GO_BOOTLOADER.cfg",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/ae_cpu.sublime-project",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/piercing/piercing.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/kernel/TSwitchingBuffer.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/FS/TStateBase.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/FILES/scripts.py/cmp.py",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/User/clang_format.sublime-settings",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/shared/Recorder.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/FS/FS.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Src/FS/write_head.cpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Src/log.cpp",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/Clang Format/clang_format.sublime-settings",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/User/clang_format_custom.sublime-settings",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/Clang Format/clang_format_custom.sublime-settings",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/debug.log",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usart.h",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/build/SALVAGNINI_LPM/make[2]",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/build/SALVAGNINI_LPM/make[1]",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/build/SALVAGNINI_LPM/[path",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/ae-cpu-1-playground.code-workspace",
+		"/C/Users/vkuzmenko/AppData/Roaming/Sublime Text 3/Packages/User/cmake.sublime-build",
+		"/C/Users/vkuzmenko/eclipse-workspace/htool/htool.sublime-project",
+		"/C/Users/vkuzmenko/eclipse-workspace/htool/inc/output.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/htool/inc/parser.hpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/htool/htool2.sublime-project",
+		"/C/Users/vkuzmenko/eclipse-workspace/htool/ae_cpu.sublime-project",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Src/diskio.cpp",
+		"/C/Users/vkuzmenko/eclipse-workspace/AE_CPU_1_Playground/source/cpp/Inc/log/log.hpp",
+		"/C/Users/vkuzmenko/workspace_1.2.0/AE_CPU_1_Playground/source/CMakeLists.txt"
+	],
+	"find":
+	{
+		"height": 28.0
+	},
+	"find_in_files":
+	{
+		"height": 104.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 28.0
+	},
+	"input":
+	{
+		"height": 39.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "SALVAGNINI LPM",
+	"project": "f.sublime-project",
+	"replace":
+	{
+		"height": 52.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 748.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 343.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

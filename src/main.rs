@@ -331,23 +331,6 @@ fn main() {
 
             sm.clicked();
 
-            {
-                let (min, max) = frequency_count_intervals;
-                let (count, _, _) = &mut fc;
-                for value in widget::Slider::new(*count as f64, min, max)
-                    .color(color::LIGHT_BLUE)
-                    .h(60.0)
-                    .mid_bottom_with_margin_on(ids.top, 5.0)
-                    .w_of(ids.tab_frequency_calibration)
-                    .parent(ids.tab_frequency_calibration)
-                    .set(ids.count_frequency_slider, ui)
-                {
-                    //println!("start {}", value);
-                    let value: f64 = value;
-                    *count = value.round() as u8;
-                }
-            }
-
             widget::Text::new("Period ticks: ")
                 .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0, 20.0)
                 .color(conrod::color::BLACK)
@@ -356,6 +339,7 @@ fn main() {
                 .line_spacing(3.0)
                 .parent(ids.tab_frequency_calibration)
                 .set(ids.count_label_info, ui);
+
             {
                 let (count, _, _) = &fc;
                 widget::Text::new(&format!("{:}", count))
@@ -380,6 +364,7 @@ fn main() {
                     .parent(ids.tab_frequency_calibration)
                     .set(ids.count_label_approx_in_sec, ui);
             }
+
             widget::Text::new(&"Reference frequency: ".to_string())
                 .bottom_left_with_margins_on(ids.count_frequency_slider, 80.0 + 100.0, 20.0)
                 .color(conrod::color::BLACK)
